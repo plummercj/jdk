@@ -100,15 +100,10 @@ class ClassLoaderDataGraph : public AllStatic {
   static void clean_module_and_package_info();
   static void purge();
   static void clear_claimed_marks();
-  // oops do
-  static void oops_do(OopClosure* f, bool must_claim);
-  static void keep_alive_oops_do(OopClosure* blk, bool must_claim);
-  static void always_strong_oops_do(OopClosure* blk, bool must_claim);
-  // cld do
+  // Iteration through CLDG inside a safepoint; GC support
   static void cld_do(CLDClosure* cl);
   static void cld_unloading_do(CLDClosure* cl);
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
-  static void keep_alive_cld_do(CLDClosure* cl);
   static void always_strong_cld_do(CLDClosure* cl);
   // klass do
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
@@ -138,9 +133,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void dictionary_classes_do(void f(InstanceKlass*));
   // Added for initialize_itable_for_klass to handle exceptions.
   static void dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
-
-  // Iterate all classes and their class loaders, including initiating class loaders.
-  static void dictionary_all_entries_do(void f(InstanceKlass*, ClassLoaderData*));
 
   // VM_CounterDecay iteration support
   static InstanceKlass* try_get_next_class();

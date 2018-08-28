@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.testlibrary;
+#ifndef SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
+#define SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
 
-/**
- * This type serves no other purpose than to simply allow automatically running
- * something in a thread, and have all exceptions propagated to
- * RuntimeExceptions, which are thrown up to thread, which in turn should
- * probably be a {@link TestThread} to they are stored.
- */
-public abstract class XRun implements Runnable {
+#include "oops/compressedOops.inline.hpp"
+#include "memory/heapShared.hpp"
 
-    /**
-     * Invokes {@code xrun()} and throws all exceptions caught in it
-     * up to the thread.
-     */
-    public final void run() {
-        try {
-            xrun();
-        } catch (Error e) {
-            throw e;
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
+#if INCLUDE_CDS_JAVA_HEAP
 
-    /**
-     * Override this method to implement what to run in the thread.
-     *
-     * @throws Throwable
-     */
-    protected abstract void xrun() throws Throwable;
+inline oop HeapShared::decode_with_archived_oop_encoding_mode(narrowOop v) {
+  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
+  oop result = (oop)(void*)((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
+  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  return result;
 }
+
+#endif
+
+#endif // SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
