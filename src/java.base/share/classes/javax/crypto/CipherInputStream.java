@@ -59,7 +59,7 @@ import javax.crypto.IllegalBlockSizeException;
  * directly as an alternative to using this class.
  *
  * <p> It is crucial for a programmer using this class not to use
- * methods that are not defined or overriden in this class (such as a
+ * methods that are not defined or overridden in this class (such as a
  * new method or constructor that is later added to one of the super
  * classes), because the design and implementation of those methods
  * are unlikely to have considered security impact with regard to
