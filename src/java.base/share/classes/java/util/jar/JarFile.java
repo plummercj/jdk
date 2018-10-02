@@ -420,9 +420,9 @@ class JarFile extends ZipFile {
                     if (!jvInitialized) {
                         jv = new JarVerifier(b);
                     }
-                    man = new Manifest(jv, new ByteArrayInputStream(b));
+                    man = new Manifest(jv, new ByteArrayInputStream(b), getName());
                 } else {
-                    man = new Manifest(super.getInputStream(manEntry));
+                    man = new Manifest(super.getInputStream(manEntry), getName());
                 }
                 manRef = new SoftReference<>(man);
             }
