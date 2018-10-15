@@ -223,6 +223,7 @@ public final class JarUtils {
      *              be either updated or added. The files in the 2nd group
      *              will be removed. If no "-" exists, all files belong to
      *              the 1st group.
+     * @throws IOException if there is an error
      */
     @Deprecated
     public static void updateJar(String src, String dest, String... files)
@@ -260,7 +261,7 @@ public final class JarUtils {
      *                Value can be Path, byte[] or String. If key exists in
      *                src but value is Boolean FALSE. The entry is removed.
      *                Existing entries in src not a key is unmodified.
-     * @throws IOException
+     * @throws IOException if there is an error
      */
     @Deprecated
     public static void updateJar(String src, String dest,
