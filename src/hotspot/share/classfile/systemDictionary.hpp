@@ -116,6 +116,7 @@ class OopStorage;
   do_klass(SecurityManager_klass,                       java_lang_SecurityManager                             ) \
   do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain                        ) \
   do_klass(AccessControlContext_klass,                  java_security_AccessControlContext                    ) \
+  do_klass(AccessController_klass,                      java_security_AccessController                        ) \
   do_klass(SecureClassLoader_klass,                     java_security_SecureClassLoader                       ) \
   do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException                      ) \
   do_klass(NoClassDefFoundError_klass,                  java_lang_NoClassDefFoundError                        ) \
@@ -346,8 +347,7 @@ public:
 
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
-  static bool do_unloading(GCTimer* gc_timer,
-                           bool do_cleaning = true);
+  static bool do_unloading(GCTimer* gc_timer);
 
   // Used by DumpSharedSpaces only to remove classes that failed verification
   static void remove_classes_in_error_state();

@@ -201,10 +201,15 @@ var getJibProfiles = function (input) {
     data.configuration_make_arg = "CONF_NAME=";
 
     // Exclude list to use when Jib creates a source bundle
-    data.src_bundle_excludes = "./build .build webrev* */webrev* */*/webrev* */*/*/webrev* .hg */.hg */*/.hg */*/*/.hg";
+    data.src_bundle_excludes = [
+        "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork", "{,**/}JTreport",
+        "{,**/}.git"
+    ];
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
-    data.conf_bundle_includes = "*/conf/jib-profiles.* make/autoconf/version-numbers"
+    data.conf_bundle_includes = [
+        "make/autoconf/version-numbers",
+    ];
 
     // Define some common values
     var common = getJibProfilesCommon(input, data);
@@ -520,6 +525,27 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.debug_suffix;
         profiles[name] = concatObjects(common.main_profile_base, profiles[name]);
         profiles[debugName] = concatObjects(profiles[name], common.debug_profile_base);
+    });
+
+    // Define a profile with precompiled headers disabled. This is just used for
+    // verfication of this build configuration.
+    var noPchProfiles = {
+        "linux-x64-debug-nopch": {
+            target_os: "linux",
+            target_cpu: "x64",
+            dependencies: ["devkit"],
+            configure_args: concat(common.configure_args_64bit,
+                "--with-zlib=system", "--disable-precompiled-headers"),
+        },
+    };
+    profiles = concatObjects(profiles, noPchProfiles);
+    // Add base settings to noPch profiles
+    Object.keys(noPchProfiles).forEach(function (name) {
+        profiles[name] = concatObjects(common.main_profile_base, profiles[name]);
+        profiles[name] = concatObjects(common.debug_profile_base, profiles[name]);
+        // Override default make target with hotspot as that's the only part of
+        // the build using precompiled headers.
+        profiles[name].default_make_targets = ["hotspot"];
     });
 
     // Bootcycle profiles runs the build with itself as the boot jdk. This can
