@@ -2943,7 +2943,6 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
     st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
   }
 #ifndef PRODUCT
-  print_thread_state_on(st);
   _safepoint_state->print_on(st);
 #endif // PRODUCT
   if (is_Compiler_thread()) {
@@ -3902,6 +3901,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::enter_live_phase();
+
+  // Make perfmemory accessible
+  PerfMemory::set_accessible(true);
 
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
