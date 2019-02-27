@@ -114,8 +114,6 @@
 
 # jdk_awt
 
-java/awt/BasicStroke/DashScaleMinWidth.java 8198411 windows-all
-java/awt/BasicStroke/DashZeroWidth.java 8198411 windows-all
 java/awt/event/MouseEvent/MouseClickTest/MouseClickTest.html 8168389 windows-all,macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowBlockingTest.java 8168408 windows-all,macosx-all
 java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generic-all
@@ -870,3 +868,4 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 # jdk_jfr
 
 jdk/jfr/event/io/TestInstrumentation.java                       8202142    generic-all
+jdk/jfr/api/recording/event/TestPeriod.java                     8215890    generic-all

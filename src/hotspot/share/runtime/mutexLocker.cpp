@@ -72,7 +72,6 @@ Mutex*   TouchedMethodLog_lock        = NULL;
 Mutex*   RetData_lock                 = NULL;
 Monitor* VMOperationQueue_lock        = NULL;
 Monitor* VMOperationRequest_lock      = NULL;
-Monitor* Safepoint_lock               = NULL;
 Monitor* SerializePage_lock           = NULL;
 Monitor* Threads_lock                 = NULL;
 Mutex*   NonJavaThreadsList_lock      = NULL;
@@ -150,6 +149,9 @@ Mutex*   SharedDecoder_lock           = NULL;
 Mutex*   DCmdFactory_lock             = NULL;
 #if INCLUDE_NMT
 Mutex*   NMTQuery_lock                = NULL;
+#endif
+#if INCLUDE_CDS && INCLUDE_JVMTI
+Mutex*   CDSClassFileStream_lock      = NULL;
 #endif
 
 #define MAX_NUM_MUTEX 128
@@ -275,8 +277,6 @@ void mutex_init() {
   // CMS_bitMap_lock                          leaf 1
   // CMS_freeList_lock                        leaf 2
 
-  def(Safepoint_lock               , PaddedMonitor, safepoint,   true,  Monitor::_safepoint_check_sometimes);  // locks SnippetCache_lock/Threads_lock
-
   def(Threads_lock                 , PaddedMonitor, barrier,     true,  Monitor::_safepoint_check_sometimes);
   def(NonJavaThreadsList_lock      , PaddedMutex,   leaf,        true,  Monitor::_safepoint_check_never);
 
@@ -341,6 +341,9 @@ void mutex_init() {
   def(DCmdFactory_lock             , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
 #if INCLUDE_NMT
   def(NMTQuery_lock                , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
+#endif
+#if INCLUDE_CDS && INCLUDE_JVMTI
+  def(CDSClassFileStream_lock      , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
 #endif
 }
 

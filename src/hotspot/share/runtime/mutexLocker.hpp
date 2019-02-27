@@ -68,7 +68,6 @@ extern Mutex*   DerivedPointerTableGC_lock;      // a lock to protect the derive
 extern Monitor* CGCPhaseManager_lock;            // a lock to protect a concurrent GC's phase management
 extern Monitor* VMOperationQueue_lock;           // a lock on queue of vm_operations waiting to execute
 extern Monitor* VMOperationRequest_lock;         // a lock on Threads waiting for a vm_operation to terminate
-extern Monitor* Safepoint_lock;                  // a lock used by the safepoint abstraction
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list
@@ -133,6 +132,9 @@ extern Mutex*   SharedDecoder_lock;              // serializes access to the dec
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 #if INCLUDE_NMT
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
+#endif
+#if INCLUDE_CDS && INCLUDE_JVMTI
+extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
