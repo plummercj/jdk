@@ -559,15 +559,11 @@ public:
   size_t obj_size(oop obj) const;
   virtual ptrdiff_t cell_header_size() const;
 
-  // All objects can potentially move
-  bool is_scavengable(oop obj) { return true; };
-
   void collect(GCCause::Cause cause);
   void do_full_collection(bool clear_all_soft_refs);
 
   // Used for parsing heap during error printing
   HeapWord* block_start(const void* addr) const;
-  size_t block_size(const HeapWord* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
 
   // Used for native heap walkers: heap dumpers, mostly
