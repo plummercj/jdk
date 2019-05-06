@@ -1415,8 +1415,9 @@ public final class URL implements java.io.Serializable {
 
         URLStreamHandlerFactory fac;
         boolean checkedWithFactory = false;
+        boolean overrideableProtocol = isOverrideable(protocol);
 
-        if (isOverrideable(protocol) && jdk.internal.misc.VM.isBooted()) {
+        if (overrideableProtocol && jdk.internal.misc.VM.isBooted()) {
             // Use the factory (if any). Volatile read makes
             // URLStreamHandlerFactory appear fully initialized to current thread.
             fac = factory;
@@ -1452,7 +1453,8 @@ public final class URL implements java.io.Serializable {
 
             // Check with factory if another thread set a
             // factory since our last check
-            if (!checkedWithFactory && (fac = factory) != null) {
+            if (overrideableProtocol && !checkedWithFactory &&
+                (fac = factory) != null) {
                 handler2 = fac.createURLStreamHandler(protocol);
             }
 
