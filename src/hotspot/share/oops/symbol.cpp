@@ -57,13 +57,13 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
   }
 }
 
-void* Symbol::operator new(size_t sz, int len, TRAPS) throw() {
+void* Symbol::operator new(size_t sz, int len) throw() {
   int alloc_size = size(len)*wordSize;
   address res = (address) AllocateHeap(alloc_size, mtSymbol);
   return res;
 }
 
-void* Symbol::operator new(size_t sz, int len, Arena* arena, TRAPS) throw() {
+void* Symbol::operator new(size_t sz, int len, Arena* arena) throw() {
   int alloc_size = size(len)*wordSize;
   address res = (address)arena->Amalloc_4(alloc_size);
   return res;
@@ -73,6 +73,13 @@ void Symbol::operator delete(void *p) {
   assert(((Symbol*)p)->refcount() == 0, "should not call this");
   FreeHeap(p);
 }
+
+void Symbol::set_permanent() {
+  // This is called at a safepoint during dumping of a dynamic CDS archive.
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
+  _length_and_refcount =  pack_length_and_refcount(length(), PERM_REFCOUNT);
+}
+
 
 // ------------------------------------------------------------------
 // Symbol::starts_with

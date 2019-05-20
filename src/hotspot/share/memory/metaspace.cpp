@@ -47,6 +47,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/vmError.hpp"
 
 
 using namespace metaspace;
@@ -917,31 +918,6 @@ void MetaspaceUtils::verify_metrics() {
 #endif
 }
 
-// Utils to check if a pointer or range is part of a committed metaspace region.
-metaspace::VirtualSpaceNode* MetaspaceUtils::find_enclosing_virtual_space(const void* p) {
-  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
-  VirtualSpaceNode* vsn = Metaspace::space_list()->find_enclosing_space(p);
-  if (Metaspace::using_class_space() && vsn == NULL) {
-    vsn = Metaspace::class_space_list()->find_enclosing_space(p);
-  }
-  return vsn;
-}
-
-bool MetaspaceUtils::is_range_in_committed(const void* from, const void* to) {
-#if INCLUDE_CDS
-  if (UseSharedSpaces) {
-    for (int idx = MetaspaceShared::ro; idx <= MetaspaceShared::mc; idx++) {
-      if (FileMapInfo::current_info()->is_in_shared_region(from, idx)) {
-        return FileMapInfo::current_info()->is_in_shared_region(to, idx);
-      }
-    }
-  }
-#endif
-  VirtualSpaceNode* vsn = find_enclosing_virtual_space(from);
-  return (vsn != NULL) && vsn->contains(to);
-}
-
-
 // Metaspace methods
 
 size_t Metaspace::_first_chunk_word_size = 0;
@@ -1242,6 +1218,10 @@ void Metaspace::global_initialize() {
     // (!DumpSharedSpaces && !UseSharedSpaces) case to set up class
     // metaspace.
     MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
+  }
+
+  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
+    vm_exit_during_initialization("DynamicDumpSharedSpaces not supported when base CDS archive is not loaded", NULL);
   }
 
   if (!DumpSharedSpaces && !UseSharedSpaces)

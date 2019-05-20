@@ -711,13 +711,14 @@ jint universe_init() {
   {
     SymbolTable::create_table();
     StringTable::create_table();
+  }
 
 #if INCLUDE_CDS
-    if (DumpSharedSpaces) {
-      MetaspaceShared::prepare_for_dumping();
-    }
-#endif
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+    MetaspaceShared::prepare_for_dumping();
   }
+#endif
+
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();
   }
@@ -807,7 +808,7 @@ void initialize_known_method(LatestMethodCache* method_cache,
                              Symbol* signature,
                              bool is_static, TRAPS)
 {
-  TempNewSymbol name = SymbolTable::new_symbol(method, CHECK);
+  TempNewSymbol name = SymbolTable::new_symbol(method);
   Method* m = NULL;
   // The klass must be linked before looking up the method.
   if (!ik->link_class_or_fail(THREAD) ||

@@ -132,8 +132,8 @@ class Symbol : public MetaspaceObj {
   }
 
   Symbol(const u1* name, int length, int refcount);
-  void* operator new(size_t size, int len, TRAPS) throw();
-  void* operator new(size_t size, int len, Arena* arena, TRAPS) throw();
+  void* operator new(size_t size, int len) throw();
+  void* operator new(size_t size, int len, Arena* arena) throw();
 
   void  operator delete(void* p);
 
@@ -169,6 +169,7 @@ class Symbol : public MetaspaceObj {
   bool is_permanent() {
     return (refcount() == PERM_REFCOUNT);
   }
+  void set_permanent();
   void make_permanent();
 
   // Function char_at() returns the Symbol's selected u1 byte as a char type.

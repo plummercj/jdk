@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public interface MethodTypeDesc
      *
      * @param descriptor a method descriptor string
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the descriptor string is not a valid
      * method descriptor
      * @jvms 4.3.3 Method Descriptors
@@ -116,7 +116,7 @@ public interface MethodTypeDesc
      *
      * @param returnType a {@link ClassDesc} describing the new return type
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if the argument is {@code null}
      */
     MethodTypeDesc changeReturnType(ClassDesc returnType);
 
@@ -154,9 +154,11 @@ public interface MethodTypeDesc
      * @param paramTypes {@link ClassDesc}s describing the new parameter types
      *                   to insert
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if any argument or its contents are {@code null}
      * @throws IndexOutOfBoundsException if {@code pos} is outside the closed
      * range {[0, parameterCount]}
+     * @throws IllegalArgumentException if any element of {@code paramTypes}
+     * is a {@link ClassDesc} for {@code void}
      */
     MethodTypeDesc insertParameterTypes(int pos, ClassDesc... paramTypes);
 

@@ -2349,8 +2349,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Use shared spaces for metadata")                                 \
                                                                             \
   product(bool, VerifySharedSpaces, false,                                  \
-          "Verify shared spaces (false for default archive, true for "      \
-          "archive specified by -XX:SharedArchiveFile)")                    \
+          "Verify integrity of shared spaces")                              \
                                                                             \
   product(bool, RequireSharedSpaces, false,                                 \
           "Require shared spaces for metadata")                             \
@@ -2359,6 +2358,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Special mode: JVM reads a class list, loads classes, builds "    \
           "shared spaces, and dumps the shared spaces to a file to be "     \
           "used in future JVM runs")                                        \
+                                                                            \
+  product(bool, DynamicDumpSharedSpaces, false,                             \
+          "Dynamic archive")                                                \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
@@ -2476,6 +2478,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   product(ccstr, SharedArchiveFile, NULL,                                   \
           "Override the default location of the CDS archive file")          \
+                                                                            \
+  product(ccstr, ArchiveClassesAtExit, NULL,                                \
+          "The path and name of the dynamic archive file")                  \
                                                                             \
   product(ccstr, ExtraSharedClassListFile, NULL,                            \
           "Extra classlist for building the CDS archive file")              \

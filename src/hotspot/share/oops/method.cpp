@@ -958,22 +958,29 @@ void Method::clear_code(bool acquire_lock /* = true */) {
 void Method::unlink_method() {
   _code = NULL;
 
-  assert(DumpSharedSpaces, "dump time only");
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
   // Set the values to what they should be at run time. Note that
   // this Method can no longer be executed during dump time.
   _i2i_entry = Interpreter::entry_for_cds_method(this);
   _from_interpreted_entry = _i2i_entry;
+
+  if (DynamicDumpSharedSpaces) {
+    assert(_from_compiled_entry != NULL, "sanity");
+  } else {
+    // TODO: Simplify the adapter trampoline allocation for static archiving.
+    //       Remove the use of CDSAdapterHandlerEntry.
+    CDSAdapterHandlerEntry* cds_adapter = (CDSAdapterHandlerEntry*)adapter();
+    constMethod()->set_adapter_trampoline(cds_adapter->get_adapter_trampoline());
+    _from_compiled_entry = cds_adapter->get_c2i_entry_trampoline();
+    assert(*((int*)_from_compiled_entry) == 0,
+           "must be NULL during dump time, to be initialized at run time");
+  }
 
   if (is_native()) {
     *native_function_addr() = NULL;
     set_signature_handler(NULL);
   }
   NOT_PRODUCT(set_compiled_invocation_count(0);)
-
-  CDSAdapterHandlerEntry* cds_adapter = (CDSAdapterHandlerEntry*)adapter();
-  constMethod()->set_adapter_trampoline(cds_adapter->get_adapter_trampoline());
-  _from_compiled_entry = cds_adapter->get_c2i_entry_trampoline();
-  assert(*((int*)_from_compiled_entry) == 0, "must be NULL during dump time, to be initialized at run time");
 
   set_method_data(NULL);
   clear_method_counters();
@@ -1579,7 +1586,7 @@ bool Method::load_signature_classes(const methodHandle& m, TRAPS) {
   Symbol*  signature = m->signature();
   for(SignatureStream ss(signature); !ss.is_done(); ss.next()) {
     if (ss.is_object()) {
-      Symbol* sym = ss.as_symbol(CHECK_(false));
+      Symbol* sym = ss.as_symbol();
       Symbol*  name  = sym;
       Klass* klass = SystemDictionary::resolve_or_null(name, class_loader,
                                              protection_domain, THREAD);
