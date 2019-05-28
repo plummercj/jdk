@@ -81,10 +81,10 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
 template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsTask : public AbstractGangTask {
 private:
-  ShenandoahRootScanner* _rp;
+  ShenandoahAllRootScanner* _rp;
   bool _process_refs;
 public:
-  ShenandoahInitMarkRootsTask(ShenandoahRootScanner* rp, bool process_refs) :
+  ShenandoahInitMarkRootsTask(ShenandoahAllRootScanner* rp, bool process_refs) :
     AbstractGangTask("Shenandoah init mark roots task"),
     _rp(rp),
     _process_refs(process_refs) {
@@ -227,9 +227,12 @@ public:
       rp = NULL;
     }
 
-    // Degenerated cycle may bypass concurrent cycle, so code roots might not be scanned,
-    // let's check here.
-    _cm->concurrent_scan_code_roots(worker_id, rp);
+    if (heap->is_degenerated_gc_in_progress()) {
+      // Degenerated cycle may bypass concurrent cycle, so code roots might not be scanned,
+      // let's check here.
+      _cm->concurrent_scan_code_roots(worker_id, rp);
+    }
+
     _cm->mark_loop(worker_id, _terminator, rp,
                    false, // not cancellable
                    _dedup_string);
@@ -251,7 +254,7 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
 
   assert(nworkers <= task_queues()->size(), "Just check");
 
-  ShenandoahRootScanner root_proc(nworkers, root_phase);
+  ShenandoahAllRootScanner root_proc(nworkers, root_phase);
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
   task_queues()->reserve(nworkers);
 

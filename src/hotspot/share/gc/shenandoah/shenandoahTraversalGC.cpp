@@ -161,17 +161,16 @@ public:
 
 class ShenandoahInitTraversalCollectionTask : public AbstractGangTask {
 private:
-  ShenandoahRootScanner* _rp;
+  ShenandoahCSetRootScanner* _rp;
   ShenandoahHeap* _heap;
   ShenandoahCsetCodeRootsIterator* _cset_coderoots;
   ShenandoahStringDedupRoots       _dedup_roots;
 
 public:
-  ShenandoahInitTraversalCollectionTask(ShenandoahRootScanner* rp, ShenandoahCsetCodeRootsIterator* cset_coderoots) :
+  ShenandoahInitTraversalCollectionTask(ShenandoahCSetRootScanner* rp) :
     AbstractGangTask("Shenandoah Init Traversal Collection"),
     _rp(rp),
-    _heap(ShenandoahHeap::heap()),
-    _cset_coderoots(cset_coderoots) {}
+    _heap(ShenandoahHeap::heap()) {}
 
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
@@ -193,11 +192,7 @@ public:
       ShenandoahMarkCLDClosure cld_cl(&roots_cl);
       MarkingCodeBlobClosure code_cl(&roots_cl, CodeBlobToOopClosure::FixRelocations);
       if (unload_classes) {
-        _rp->strong_roots_do(worker_id, &roots_cl);
-        // Need to pre-evac code roots here. Otherwise we might see from-space constants.
-        ShenandoahWorkerTimings* worker_times = _heap->phase_timings()->worker_times();
-        ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
-        _cset_coderoots->possibly_parallel_blobs_do(&code_cl);
+        _rp->roots_do(worker_id, &roots_cl, NULL, &code_cl);
       } else {
         _rp->roots_do(worker_id, &roots_cl, &cld_cl, &code_cl);
       }
@@ -231,11 +226,11 @@ public:
 
 class ShenandoahFinalTraversalCollectionTask : public AbstractGangTask {
 private:
-  ShenandoahRootScanner* _rp;
+  ShenandoahAllRootScanner* _rp;
   ShenandoahTaskTerminator* _terminator;
   ShenandoahHeap* _heap;
 public:
-  ShenandoahFinalTraversalCollectionTask(ShenandoahRootScanner* rp, ShenandoahTaskTerminator* terminator) :
+  ShenandoahFinalTraversalCollectionTask(ShenandoahAllRootScanner* rp, ShenandoahTaskTerminator* terminator) :
     AbstractGangTask("Shenandoah Final Traversal Collection"),
     _rp(rp),
     _terminator(terminator),
@@ -415,11 +410,8 @@ void ShenandoahTraversalGC::init_traversal_collection() {
     {
       uint nworkers = _heap->workers()->active_workers();
       task_queues()->reserve(nworkers);
-      ShenandoahRootScanner rp(nworkers, ShenandoahPhaseTimings::init_traversal_gc_work);
-
-      ShenandoahCsetCodeRootsIterator cset_coderoots = ShenandoahCodeRoots::cset_iterator();
-
-      ShenandoahInitTraversalCollectionTask traversal_task(&rp, &cset_coderoots);
+      ShenandoahCSetRootScanner rp(nworkers, ShenandoahPhaseTimings::init_traversal_gc_work);
+      ShenandoahInitTraversalCollectionTask traversal_task(&rp);
       _heap->workers()->run_task(&traversal_task);
     }
 
@@ -588,7 +580,7 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     task_queues()->reserve(nworkers);
 
     // Finish traversal
-    ShenandoahRootScanner rp(nworkers, ShenandoahPhaseTimings::final_traversal_gc_work);
+    ShenandoahAllRootScanner rp(nworkers, ShenandoahPhaseTimings::final_traversal_gc_work);
     ShenandoahTerminationTracker term(ShenandoahPhaseTimings::final_traversal_gc_termination);
 
     ShenandoahTaskTerminator terminator(nworkers, task_queues());
