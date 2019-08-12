@@ -788,13 +788,14 @@ const size_t minimumSymbolTableSize = 1024;
           "Use SSE2 MOVQ instruction for Arraycopy")                        \
                                                                             \
   product(intx, FieldsAllocationStyle, 1,                                   \
-          "0 - type based with oops first, "                                \
+          "(Deprecated) 0 - type based with oops first, "                   \
           "1 - with oops last, "                                            \
           "2 - oops in super and sub classes are together")                 \
           range(0, 2)                                                       \
                                                                             \
   product(bool, CompactFields, true,                                        \
-          "Allocate nonstatic fields in gaps between previous fields")      \
+          "(Deprecated) Allocate nonstatic fields in gaps "                 \
+          "between previous fields")                                        \
                                                                             \
   notproduct(bool, PrintFieldLayout, false,                                 \
           "Print field layout for each class")                              \
@@ -1768,13 +1769,13 @@ const size_t minimumSymbolTableSize = 1024;
           range(0, 100)                                                     \
                                                                             \
   /* AOT parameters */                                                      \
-  product(bool, UseAOT, AOT_ONLY(true) NOT_AOT(false),                      \
+  experimental(bool, UseAOT, false,                                         \
           "Use AOT compiled files")                                         \
                                                                             \
-  product(ccstrlist, AOTLibrary, NULL,                                      \
+  experimental(ccstrlist, AOTLibrary, NULL,                                 \
           "AOT library")                                                    \
                                                                             \
-  product(bool, PrintAOT, false,                                            \
+  experimental(bool, PrintAOT, false,                                       \
           "Print used AOT klasses and methods")                             \
                                                                             \
   notproduct(bool, PrintAOTStatistics, false,                               \
