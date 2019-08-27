@@ -70,7 +70,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
@@ -592,6 +592,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
      static_field(StubRoutines,                _aescrypt_decryptBlock,                        address)                               \
      static_field(StubRoutines,                _cipherBlockChaining_encryptAESCrypt,          address)                               \
      static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,          address)                               \
+     static_field(StubRoutines,                _electronicCodeBook_encryptAESCrypt,           address)                               \
+     static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,           address)                               \
      static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \

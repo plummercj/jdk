@@ -97,6 +97,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
+                       G1RedirtyCardsQueueSet* rdcqs,
                        uint worker_id,
                        size_t young_cset_length,
                        size_t optional_cset_length);
@@ -143,12 +144,6 @@ public:
 
   size_t lab_waste_words() const;
   size_t lab_undo_waste_words() const;
-
-  size_t* surviving_young_words() {
-    // We add one to hide entry 0 which accumulates surviving words for
-    // age -1 regions (i.e. non-young ones)
-    return _surviving_young_words + 1;
-  }
 
   void flush(size_t* surviving_young_words);
 
@@ -237,6 +232,7 @@ public:
 
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
+  G1RedirtyCardsQueueSet* _rdcqs;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
@@ -246,6 +242,7 @@ class G1ParScanThreadStateSet : public StackObj {
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
+                          G1RedirtyCardsQueueSet* rdcqs,
                           uint n_workers,
                           size_t young_cset_length,
                           size_t optional_cset_length);
