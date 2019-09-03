@@ -41,6 +41,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceCounters.hpp"
@@ -584,6 +585,10 @@ PSHeapSummary ParallelScavengeHeap::create_ps_heap_summary() {
   return PSHeapSummary(heap_summary, used(), old_summary, old_space, young_summary, eden_space, from_space, to_space);
 }
 
+bool ParallelScavengeHeap::print_location(outputStream* st, void* addr) const {
+  return BlockLocationPrinter<ParallelScavengeHeap>::print_location(st, addr);
+}
+
 void ParallelScavengeHeap::print_on(outputStream* st) const {
   young_gen()->print_on(st);
   old_gen()->print_on(st);
@@ -618,7 +623,6 @@ PreGenGCValues ParallelScavengeHeap::get_pre_gc_values() const {
   const PSYoungGen* const young = young_gen();
   const MutableSpace* const eden = young->eden_space();
   const MutableSpace* const from = young->from_space();
-  const MutableSpace* const to = young->to_space();
   const PSOldGen* const old = old_gen();
 
   return PreGenGCValues(young->used_in_bytes(),

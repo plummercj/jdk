@@ -184,6 +184,7 @@ import java.util.StringTokenizer;
  */
 
 public final class NetPermission extends BasicPermission {
+    @java.io.Serial
     private static final long serialVersionUID = -8343910153355041693L;
 
     /**

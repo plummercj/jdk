@@ -74,6 +74,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -1080,7 +1081,7 @@ void G1CollectedHeap::abort_refinement() {
 
   // Discard all remembered set updates.
   G1BarrierSet::dirty_card_queue_set().abandon_logs();
-  assert(G1BarrierSet::dirty_card_queue_set().num_completed_buffers() == 0,
+  assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
          "DCQS should be empty");
 }
 
@@ -1683,11 +1684,10 @@ jint G1CollectedHeap::initialize() {
                                                  G1SATBProcessCompletedThreshold,
                                                  G1SATBBufferEnqueueingThresholdPercent);
 
-  // process_completed_buffers_threshold and max_completed_buffers are updated
+  // process_cards_threshold and max_cards are updated
   // later, based on the concurrent refinement object.
   G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                                  &bs->dirty_card_queue_buffer_allocator(),
-                                                  true); // init_free_ids
+                                                  &bs->dirty_card_queue_buffer_allocator());
 
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);
@@ -1812,8 +1812,8 @@ jint G1CollectedHeap::initialize() {
 
   {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_completed_buffers_threshold(concurrent_refine()->yellow_zone());
-    dcqs.set_max_completed_buffers(concurrent_refine()->red_zone());
+    dcqs.set_process_cards_threshold(concurrent_refine()->yellow_zone());
+    dcqs.set_max_cards(concurrent_refine()->red_zone());
   }
 
   // Here we allocate the dummy HeapRegion that is required by the
@@ -1948,12 +1948,8 @@ void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint work
 
 void G1CollectedHeap::iterate_dirty_card_closure(G1CardTableEntryClosure* cl, uint worker_i) {
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  size_t n_completed_buffers = 0;
-  while (dcqs.apply_closure_during_gc(cl, worker_i)) {
-    n_completed_buffers++;
-  }
-  assert(dcqs.num_completed_buffers() == 0, "Completed buffers exist!");
-  phase_times()->record_thread_work_item(G1GCPhaseTimes::MergeLB, worker_i, n_completed_buffers, G1GCPhaseTimes::MergeLBProcessedBuffers);
+  while (dcqs.apply_closure_during_gc(cl, worker_i)) {}
+  assert(dcqs.num_cards() == 0, "Completed buffers exist!");
 }
 
 // Computes the sum of the storage used by the various regions.
@@ -2490,6 +2486,10 @@ void G1CollectedHeap::print_all_rsets() {
 }
 #endif // PRODUCT
 
+bool G1CollectedHeap::print_location(outputStream* st, void* addr) const {
+  return BlockLocationPrinter<G1CollectedHeap>::print_location(st, addr);
+}
+
 G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
   size_t eden_used_bytes = _eden.used_bytes();
@@ -2614,9 +2614,9 @@ size_t G1CollectedHeap::pending_card_num() {
   Threads::threads_do(&count_from_threads);
 
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  dcqs.verify_num_entries_in_completed_buffers();
+  dcqs.verify_num_cards();
 
-  return dcqs.num_entries_in_completed_buffers() + count_from_threads._cards;
+  return dcqs.num_cards() + count_from_threads._cards;
 }
 
 bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const {

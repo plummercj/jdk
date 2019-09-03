@@ -173,7 +173,7 @@ THREAD_LOCAL_DECL Thread* Thread::_thr_current = NULL;
 // Support for forcing alignment of thread objects for biased locking
 void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
   if (UseBiasedLocking) {
-    const int alignment = markWord::biased_lock_alignment;
+    const size_t alignment = markWord::biased_lock_alignment;
     size_t aligned_size = size + (alignment - sizeof(intptr_t));
     void* real_malloc_addr = throw_excpt? AllocateHeap(aligned_size, flags, CURRENT_PC)
                                           : AllocateHeap(aligned_size, flags, CURRENT_PC,
@@ -259,11 +259,11 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _num_nested_signal = 0;
-  omFreeList = NULL;
-  omFreeCount = 0;
-  omFreeProvision = 32;
-  omInUseList = NULL;
-  omInUseCount = 0;
+  om_free_list = NULL;
+  om_free_count = 0;
+  om_free_provision = 32;
+  om_in_use_list = NULL;
+  om_in_use_count = 0;
 
 #ifdef ASSERT
   _visited_for_critical_count = false;
@@ -301,9 +301,9 @@ Thread::Thread() {
 #endif // CHECK_UNHANDLED_OOPS
 #ifdef ASSERT
   if (UseBiasedLocking) {
-    assert((((uintptr_t) this) & (markWord::biased_lock_alignment - 1)) == 0, "forced alignment of thread object failed");
+    assert(is_aligned(this, markWord::biased_lock_alignment), "forced alignment of thread object failed");
     assert(this == _real_malloc_address ||
-           this == align_up(_real_malloc_address, (int)markWord::biased_lock_alignment),
+           this == align_up(_real_malloc_address, markWord::biased_lock_alignment),
            "bug in forced alignment of thread objects");
   }
 #endif // ASSERT
@@ -4414,8 +4414,8 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
 
-  // Reclaim the ObjectMonitors from the omInUseList and omFreeList of the moribund thread.
-  ObjectSynchronizer::omFlush(p);
+  // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
+  ObjectSynchronizer::om_flush(p);
 
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice

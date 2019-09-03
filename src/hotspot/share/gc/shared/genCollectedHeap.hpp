@@ -28,6 +28,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/oopStorageParState.hpp"
+#include "gc/shared/preGCValues.hpp"
 #include "gc/shared/softRefGenPolicy.hpp"
 
 class AdaptiveSizePolicy;
@@ -99,6 +100,8 @@ private:
 
   // Initialize ("weak") refs processing support
   void ref_processing_init();
+
+  PreGenGCValues get_pre_gc_values() const;
 
 protected:
 
@@ -260,13 +263,13 @@ public:
   // address "addr".  We say "blocks" instead of "object" since some heaps
   // may not pack objects densely; a chunk may either be an object or a
   // non-object.
-  virtual HeapWord* block_start(const void* addr) const;
+  HeapWord* block_start(const void* addr) const;
 
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object. Assumes (and verifies in non-product
   // builds) that addr is in the allocated part of the heap and is
   // the start of a chunk.
-  virtual bool block_is_obj(const HeapWord* addr) const;
+  bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
   virtual bool supports_tlab_allocation() const;
@@ -332,7 +335,10 @@ public:
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  void print_heap_change(size_t young_prev_used, size_t old_prev_used) const;
+  // Used to print information about locations in the hs_err file.
+  virtual bool print_location(outputStream* st, void* addr) const;
+
+  void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
   // The functions below are helper functions that a subclass of
   // "CollectedHeap" can use in the implementation of its virtual
