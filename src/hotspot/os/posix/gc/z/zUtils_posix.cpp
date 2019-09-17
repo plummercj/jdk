@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_RUNTIME_OS_EXT_HPP
-#define SHARE_RUNTIME_OS_EXT_HPP
+#include "precompiled.hpp"
+#include "gc/z/zUtils.hpp"
+#include "utilities/debug.hpp"
 
-#define EMIT_RANGES_FOR_GLOBALS_EXT // NOP
-#define EMIT_CONSTRAINTS_FOR_GLOBALS_EXT // NOP
-#define EMIT_WRITEABLES_FOR_GLOBALS_EXT // NOP
+#include <stdlib.h>
 
-public:
-  static void init_globals_ext() {} // Run from init_globals().
-                                    // See os.hpp/cpp and init.cpp.
+uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
+  void* res = NULL;
 
- private:
+  if (posix_memalign(&res, alignment, size) != 0) {
+    fatal("posix_memalign() failed");
+  }
 
-#endif // SHARE_RUNTIME_OS_EXT_HPP
+  memset(res, 0, size);
+
+  return (uintptr_t)res;
+}

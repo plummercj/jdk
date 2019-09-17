@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,32 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zUtils.inline.hpp"
-#include "utilities/debug.hpp"
+package nsk.jdb.monitor.monitor002;
 
-#include <stdlib.h>
+import nsk.share.*;
+import nsk.share.jpda.*;
+import nsk.share.jdb.*;
 
-uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
-  void* res = NULL;
+import java.io.*;
 
-  if (posix_memalign(&res, alignment, size) != 0) {
-    fatal("posix_memalign() failed");
-  }
+//    THIS TEST IS LINE NUMBER SENSITIVE
 
-  memset(res, 0, size);
+/* This is debuggee aplication */
+public class monitor002a {
+    static monitor002a _monitor002a = new monitor002a();
 
-  return (uintptr_t)res;
+    public static void main(String args[]) {
+        System.exit(monitor002.JCK_STATUS_BASE + _monitor002a.runIt(args, System.out));
+    }
+
+    static void lastBreak () {}
+
+    public int runIt(String args[], PrintStream out) {
+        JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
+        Log log = new Log(out, argumentHandler);
+        int localInt = 0; // monitor002.LINE_NUMBER
+        localInt++; // dummy breakpoint
+        log.display("Debuggee PASSED");
+        return monitor002.PASSED;
+    }
 }
