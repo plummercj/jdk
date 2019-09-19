@@ -271,7 +271,15 @@ enum Alert {
                                     ClientAuthType.CLIENT_AUTH_REQUESTED)) {
                         throw tc.fatal(Alert.HANDSHAKE_FAILURE,
                             "received handshake warning: " + alert.description);
-                    }  // Otherwise, ignore the warning
+                    } else {
+                         // Otherwise, ignore the warning but remove the
+                         // Certificate handshake consumer so the state machine
+                         // won't expect it.
+                        tc.handshakeContext.handshakeConsumers.remove(
+                                SSLHandshake.CERTIFICATE.id);
+                        tc.handshakeContext.handshakeConsumers.remove(
+                                SSLHandshake.CERTIFICATE_VERIFY.id);
+                    }
                 }   // Otherwise, ignore the warning.
             } else {    // fatal or unknown
                 String diagnostic;
