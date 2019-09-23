@@ -96,7 +96,7 @@ class ServerSocket implements java.io.Closeable {
     /**
      * Creates an unbound server socket.
      *
-     * @exception IOException IO error when opening the socket.
+     * @throws    IOException IO error when opening the socket.
      * @revised 1.4
      */
     public ServerSocket() throws IOException {
@@ -128,11 +128,11 @@ class ServerSocket implements java.io.Closeable {
      * @param      port  the port number, or {@code 0} to use a port
      *                   number that is automatically allocated.
      *
-     * @exception  IOException  if an I/O error occurs when opening the socket.
-     * @exception  SecurityException
+     * @throws     IOException  if an I/O error occurs when opening the socket.
+     * @throws     SecurityException
      * if a security manager exists and its {@code checkListen}
      * method doesn't allow the operation.
-     * @exception  IllegalArgumentException if the port parameter is outside
+     * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
@@ -181,11 +181,11 @@ class ServerSocket implements java.io.Closeable {
      * @param      backlog  requested maximum length of the queue of incoming
      *                      connections.
      *
-     * @exception  IOException  if an I/O error occurs when opening the socket.
-     * @exception  SecurityException
+     * @throws     IOException  if an I/O error occurs when opening the socket.
+     * @throws     SecurityException
      * if a security manager exists and its {@code checkListen}
      * method doesn't allow the operation.
-     * @exception  IllegalArgumentException if the port parameter is outside
+     * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
@@ -234,7 +234,7 @@ class ServerSocket implements java.io.Closeable {
      * its {@code checkListen} method doesn't allow the operation.
      *
      * @throws  IOException if an I/O error occurs when opening the socket.
-     * @exception  IllegalArgumentException if the port parameter is outside
+     * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      *
@@ -487,13 +487,13 @@ class ServerSocket implements java.io.Closeable {
      * of the {@linkplain Socket#setSocketImplFactory(SocketImplFactory)
      * client socket implementation factory}, if one has been set.
      *
-     * @exception  IOException  if an I/O error occurs when waiting for a
+     * @throws     IOException  if an I/O error occurs when waiting for a
      *               connection.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkAccept} method doesn't allow the operation.
-     * @exception  SocketTimeoutException if a timeout was previously set with setSoTimeout and
+     * @throws     SocketTimeoutException if a timeout was previously set with setSoTimeout and
      *             the timeout has been reached.
-     * @exception  java.nio.channels.IllegalBlockingModeException
+     * @throws     java.nio.channels.IllegalBlockingModeException
      *             if this socket has an associated channel, the channel is in
      *             non-blocking mode, and there is no connection ready to be
      *             accepted
@@ -687,7 +687,7 @@ class ServerSocket implements java.io.Closeable {
      * <p> If this socket has an associated channel then the channel is closed
      * as well.
      *
-     * @exception  IOException  if an I/O error occurs when closing the socket.
+     * @throws     IOException  if an I/O error occurs when closing the socket.
      * @revised 1.4
      * @spec JSR-51
      */
@@ -776,7 +776,7 @@ class ServerSocket implements java.io.Closeable {
      * Retrieve setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}.
      * 0 returns implies that the option is disabled (i.e., timeout of infinity).
      * @return the {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT} value
-     * @exception IOException if an I/O error occurs
+     * @throws    IOException if an I/O error occurs
      * @since   1.1
      * @see #setSoTimeout(int)
      */
@@ -819,7 +819,7 @@ class ServerSocket implements java.io.Closeable {
      * is not defined.
      *
      * @param on  whether to enable or disable the socket option
-     * @exception SocketException if an error occurs enabling or
+     * @throws    SocketException if an error occurs enabling or
      *            disabling the {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
      *            socket option, or the socket is closed.
      * @since 1.4
@@ -839,7 +839,7 @@ class ServerSocket implements java.io.Closeable {
      *
      * @return a {@code boolean} indicating whether or not
      *         {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
-     * @exception SocketException if there is an error
+     * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      * @since   1.4
      * @see #setReuseAddress(boolean)
@@ -898,10 +898,10 @@ class ServerSocket implements java.io.Closeable {
      * This could result in a SecurityException.
      *
      * @param      fac   the desired factory.
-     * @exception  IOException  if an I/O error occurs when setting the
+     * @throws     IOException  if an I/O error occurs when setting the
      *               socket factory.
-     * @exception  SocketException  if the factory has already been defined.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SocketException  if the factory has already been defined.
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkSetFactory
@@ -941,13 +941,13 @@ class ServerSocket implements java.io.Closeable {
      * requested value but the TCP receive window in sockets accepted from
      * this ServerSocket will be no larger than 64K bytes.
      *
-     * @exception SocketException if there is an error
+     * @throws    SocketException if there is an error
      * in the underlying protocol, such as a TCP error.
      *
      * @param size the size to which to set the receive buffer
      * size. This value must be greater than 0.
      *
-     * @exception IllegalArgumentException if the
+     * @throws    IllegalArgumentException if the
      * value is 0 or is negative.
      *
      * @since 1.4
@@ -971,7 +971,7 @@ class ServerSocket implements java.io.Closeable {
      * calling {@link Socket#getReceiveBufferSize()}.
      * @return the value of the {@link SocketOptions#SO_RCVBUF SO_RCVBUF}
      *         option for this {@code Socket}.
-     * @exception SocketException if there is an error
+     * @throws    SocketException if there is an error
      *            in the underlying protocol, such as a TCP error.
      * @see #setReceiveBufferSize(int)
      * @since 1.4
