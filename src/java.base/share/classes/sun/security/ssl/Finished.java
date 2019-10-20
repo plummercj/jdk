@@ -595,16 +595,6 @@ final class Finished {
                         "Consuming client Finished handshake message", fm);
             }
 
-            // Make sure that any expected CertificateVerify message has
-            // not been left unreceived.
-            if (!shc.isResumption) {
-                if (shc.handshakeConsumers.containsKey(
-                        SSLHandshake.CERTIFICATE_VERIFY.id)) {
-                    throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                            "Unexpected Finished handshake message.");
-                }
-            }
-
             if (shc.conContext.secureRenegotiation) {
                 shc.conContext.clientVerifyData = fm.verifyData;
             }
@@ -899,20 +889,6 @@ final class Finished {
                         "Consuming server Finished handshake message", fm);
             }
 
-            // Check to make sure the server certificate and certificate
-            // verify consumers have been run.  If either of those handshake
-            // consumers are still present then those messages may not have
-            // been sent.
-            if (!chc.isResumption) {
-                if (chc.handshakeConsumers.containsKey(
-                        SSLHandshake.CERTIFICATE.id) ||
-                    chc.handshakeConsumers.containsKey(
-                        SSLHandshake.CERTIFICATE_VERIFY.id)) {
-                    throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                            "Unexpected Finished handshake message.");
-                }
-            }
-
             // Save client verify data for secure renegotiation.
             if (chc.conContext.secureRenegotiation) {
                 chc.conContext.serverVerifyData = fm.verifyData;
@@ -1033,19 +1009,6 @@ final class Finished {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming client Finished handshake message", fm);
-            }
-
-            // Check for an expected client Certificate and/or CertificateVerify
-            // message. If those handshake consumers are still present then
-            // one or both of those required messages may not have been sent.
-            if (!shc.isResumption) {
-                if (shc.handshakeConsumers.containsKey(
-                        SSLHandshake.CERTIFICATE.id) ||
-                    shc.handshakeConsumers.containsKey(
-                        SSLHandshake.CERTIFICATE_VERIFY.id)) {
-                    throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                            "Unexpected Finished handshake message.");
-                }
             }
 
             if (shc.conContext.secureRenegotiation) {
