@@ -676,7 +676,6 @@ Java_sun_font_FreetypeFontScaler_getGlyphMetricsNative(
      if (info != NULL) {
          (*env)->SetFloatField(env, metrics, sunFontIDs.xFID, info->advanceX);
          (*env)->SetFloatField(env, metrics, sunFontIDs.yFID, info->advanceY);
-
          free(info);
      } else {
          (*env)->SetFloatField(env, metrics, sunFontIDs.xFID, 0.0f);
