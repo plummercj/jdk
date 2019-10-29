@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,9 @@ final class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocket
         fd1 = new FileDescriptor();
         try {
             super.create();
-            SocketCleanable.register(fd1);
+            // make SocketCleanable treat fd1 as a stream socket
+            // to avoid touching the counter in ResourceManager
+            SocketCleanable.register(fd1, true);
         } catch (SocketException e) {
             fd1 = null;
             throw e;
@@ -113,8 +115,10 @@ final class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocket
 
         bind0(lport, laddr, exclusiveBind);
 
-        SocketCleanable.register(fd);
-        SocketCleanable.register(fd1);
+        SocketCleanable.register(fd, false);
+        // make SocketCleanable treat fd1 as a stream socket
+        // to avoid touching the counter in ResourceManager
+        SocketCleanable.register(fd1, true);
     }
 
     protected synchronized void receive(DatagramPacket p)
