@@ -305,9 +305,6 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(bool, TraceCodeBlobStacks, false,                              \
           "Trace stack-walk of codeblobs")                                  \
                                                                             \
-  product(bool, PrintJNIResolving, false,                                   \
-          "Used to implement -v:jni")                                       \
-                                                                            \
   notproduct(bool, PrintRewrites, false,                                    \
           "Print methods that are being rewritten")                         \
                                                                             \
@@ -2222,9 +2219,6 @@ const size_t minimumSymbolTableSize = 1024;
   product(uint64_t, MaxDirectMemorySize, 0,                                 \
           "Maximum total size of NIO direct-buffer allocations")            \
           range(0, max_jlong)                                               \
-                                                                            \
-  product(bool, ClassForNameDeferLinking, false,                            \
-          "Revert to not linking in Class.forName()")                       \
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \

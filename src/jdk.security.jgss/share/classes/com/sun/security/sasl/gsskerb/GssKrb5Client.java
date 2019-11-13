@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import javax.security.sasl.*;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 // JAAS
 import javax.security.auth.callback.CallbackHandler;
 
@@ -150,11 +152,7 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
         }
 
         if (authzID != null && authzID.length() > 0) {
-            try {
-                this.authzID = authzID.getBytes("UTF8");
-            } catch (IOException e) {
-                throw new SaslException("Cannot encode authorization ID", e);
-            }
+            this.authzID = authzID.getBytes(UTF_8);
         }
     }
 
