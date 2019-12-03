@@ -78,7 +78,8 @@ final class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocket
     // emulates SO_REUSEADDR when exclusiveBind is true and socket is bound
     private boolean isReuseAddress;
 
-    TwoStacksPlainDatagramSocketImpl(boolean exclBind) {
+    TwoStacksPlainDatagramSocketImpl(boolean exclBind, boolean isMulticast) {
+        super(isMulticast);
         exclusiveBind = exclBind;
     }
 
