@@ -599,8 +599,9 @@ public final class OCSPResponse {
                 }
                 debug.println("OCSP response validity interval is from " +
                         sr.thisUpdate + until);
-                debug.println("Checking validity of OCSP response on: " +
-                        new Date(now));
+                debug.println("Checking validity of OCSP response on " +
+                        new Date(now) + " with allowed interval between " +
+                        nowMinusSkew + " and " + nowPlusSkew);
             }
 
             // Check that the test date is within the validity interval:
