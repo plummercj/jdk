@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,32 @@
  * questions.
  */
 
-package gc.concurrent_phase_control;
-
-/*
- * @test TestConcurrentPhaseControlParallel
- * @bug 8169517
- * @requires vm.gc.Parallel
- * @summary Verify Parallel GC doesn't support WhiteBox concurrent phase control.
- * @key gc
- * @modules java.base
- * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *    sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -XX:+UseParallelGC
- *   -Xbootclasspath/a:.
- *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *   gc.concurrent_phase_control.TestConcurrentPhaseControlParallel
+/**
+ * @test
+ * @bug 8238384
+ * @summary CTW: C2 compilation fails with "assert(store != load->find_exact_control(load->in(0))) failed: dependence cycle found"
+ *
+ * @run main/othervm -XX:-BackgroundCompilation TestCopyOfBrokenAntiDependency
+ *
  */
 
-import gc.concurrent_phase_control.CheckUnsupported;
+import java.util.Arrays;
 
-public class TestConcurrentPhaseControlParallel {
+public class TestCopyOfBrokenAntiDependency {
 
-    public static void main(String[] args) throws Exception {
-        CheckUnsupported.check("Parallel");
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(100);
+        }
+    }
+
+    private static Object test(int length) {
+        Object[] src  = new Object[length]; // non escaping
+        final Object[] dst = Arrays.copyOf(src, 10); // can't be removed
+        final Object[] dst2 = Arrays.copyOf(dst, 100);
+        // load is control dependent on membar from previous copyOf
+        // but has memory edge to first copyOf.
+        final Object v = dst[0];
+        return v;
     }
 }

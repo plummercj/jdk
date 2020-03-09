@@ -478,9 +478,9 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
     _workers->initialize_workers();
   }
 
-  if (ShenandoahParallelSafepointThreads > 1) {
+  if (ParallelGCThreads > 1) {
     _safepoint_workers = new ShenandoahWorkGang("Safepoint Cleanup Thread",
-                                                ShenandoahParallelSafepointThreads,
+                                                ParallelGCThreads,
                       /* are_GC_task_threads */ false,
                  /* are_ConcurrentGC_threads */ false);
     _safepoint_workers->initialize_workers();
@@ -2180,19 +2180,11 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   ShenandoahGCPhase phase(timing_phase);
   phase_timings()->record_workers_start(timing_phase);
   if (has_forwarded_objects()) {
-    if (is_traversal_mode()) {
-      ShenandoahForwardedIsAliveClosure is_alive;
-      ShenandoahTraversalUpdateRefsClosure keep_alive;
-      ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahTraversalUpdateRefsClosure>
-        cleaning_task(&is_alive, &keep_alive, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
-      _workers->run_task(&cleaning_task);
-    } else {
-      ShenandoahForwardedIsAliveClosure is_alive;
-      ShenandoahUpdateRefsClosure keep_alive;
-      ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
-        cleaning_task(&is_alive, &keep_alive, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
-      _workers->run_task(&cleaning_task);
-    }
+    ShenandoahForwardedIsAliveClosure is_alive;
+    ShenandoahUpdateRefsClosure keep_alive;
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
+      cleaning_task(&is_alive, &keep_alive, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
+    _workers->run_task(&cleaning_task);
   } else {
     ShenandoahIsAliveClosure is_alive;
 #ifdef ASSERT

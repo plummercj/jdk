@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
-
-#include "jfr/jfrEvents.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "memory/allocation.hpp"
-
-class ShenandoahWorkerTimingsTracker : public StackObj {
-private:
-  double _start_time;
-  ShenandoahPhaseTimings::GCParPhases _phase;
-  ShenandoahWorkerTimings* _worker_times;
-  uint _worker_id;
-
-  EventGCPhaseParallel _event;
-public:
-    ShenandoahWorkerTimingsTracker(ShenandoahWorkerTimings* worker_times, ShenandoahPhaseTimings::GCParPhases phase, uint worker_id);
-    ~ShenandoahWorkerTimingsTracker();
-};
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
+/* @test
+ * @bug 8239787
+ * @summary String.indexOf(char) for empty string must give -1
+ * @run main/othervm -XX:-CompactStrings StringIndexOfChar
+ */
+public class StringIndexOfChar {
+    public static void main(String[] args) throws Exception {
+        String emptyString = "";
+        for (int i = 0; i < 100; i++) {
+            for(int c = 0; c < 0xFFFF; c++) {
+                int result = emptyString.indexOf((char)c, -1);
+                if (result != -1) {
+                    throw new Exception("new String(\"\").indexOf(char, -1) must be -1, but got " + result);
+                }
+            }
+        }
+    }
+}

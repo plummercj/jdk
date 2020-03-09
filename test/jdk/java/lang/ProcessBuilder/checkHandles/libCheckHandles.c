@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,24 @@
  * questions.
  */
 
-package gc.concurrent_phase_control;
+#include <stdlib.h>
+#include <string.h>
 
-/*
- * @test TestConcurrentPhaseControlG1Basics
- * @bug 8169517
- * @requires vm.gc.G1
- * @summary Verify G1 supports concurrent phase control.
- * @key gc
- * @modules java.base
- * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *    sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -XX:+UseG1GC
- *   -Xbootclasspath/a:.
- *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *   gc.concurrent_phase_control.TestConcurrentPhaseControlG1Basics
- */
+#ifdef _WIN32
 
-import gc.concurrent_phase_control.CheckSupported;
+#include "jni.h"
+#include "jni_util.h"
+#include <windows.h>
 
-public class TestConcurrentPhaseControlG1Basics {
-
-    public static void main(String[] args) throws Exception {
-        CheckSupported.check("G1");
+JNIEXPORT jlong JNICALL Java_CheckHandles_getProcessHandleCount(JNIEnv *env)
+{
+    DWORD handleCount;
+    HANDLE handle = GetCurrentProcess();
+    if (GetProcessHandleCount(handle, &handleCount)) {
+        return (jlong)handleCount;
+    } else {
+        return -1L;
     }
 }
+
+#endif  /*  _WIN32 */
