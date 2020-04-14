@@ -1027,6 +1027,13 @@ class HandlerImpl {
   }
 };
 
+class Node::PD {
+public:
+  enum NodeFlags {
+    _last_flag = Node::_last_flag
+  };
+};
+
  bool is_CAS(int opcode, bool maybe_volatile);
 
   // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
@@ -1050,6 +1057,17 @@ class HandlerImpl {
 source %{
 
   // Derived RegMask with conditionally allocatable registers
+
+  void PhaseOutput::pd_perform_mach_node_analysis() {
+  }
+
+  int MachNode::pd_alignment_required() const {
+    return 1;
+  }
+
+  int MachNode::compute_padding(int current_offset) const {
+    return 0;
+  }
 
   RegMask _ANY_REG32_mask;
   RegMask _ANY_REG_mask;
@@ -1696,7 +1714,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
   if (do_polling() && C->is_method_compilation()) {
     st->print("# touch polling page\n\t");
-    st->print("mov  rscratch1, #0x%lx\n\t", p2i(os::get_polling_page()));
+    st->print("ldr rscratch1, [rthread],#polling_page_offset\n\t");
     st->print("ldr zr, [rscratch1]");
   }
 }
@@ -1714,7 +1732,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    __ read_polling_page(rscratch1, os::get_polling_page(), relocInfo::poll_return_type);
+    __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
   }
 }
 
@@ -1730,14 +1748,6 @@ int MachEpilogNode::reloc() const {
 
 const Pipeline * MachEpilogNode::pipeline() const {
   return MachNode::pipeline_class();
-}
-
-// This method seems to be obsolete. It is declared in machnode.hpp
-// and defined in all *.ad files, but it is never called. Should we
-// get rid of it?
-int MachEpilogNode::safepoint_offset() const {
-  assert(do_polling(), "no return for this epilog node");
-  return 4;
 }
 
 //=============================================================================
@@ -2357,10 +2367,19 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 
 const bool Matcher::convi2l_type_required = false;
 
+// Should the matcher clone input 'm' of node 'n'?
+bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
+  if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
+    mstack.push(m, Visit);           // m = ShiftCntV
+    return true;
+  }
+  return false;
+}
+
 // Should the Matcher clone shifts on addressing modes, expecting them
 // to be subsumed into complex addressing expressions or compute them
 // into registers?
-bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   if (clone_base_plus_offset_address(m, mstack, address_visited)) {
     return true;
   }
@@ -3175,15 +3194,6 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     __ mov(dst_reg, (u_int64_t)1);
-  %}
-
-  enc_class aarch64_enc_mov_poll_page(iRegP dst, immPollPage src) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address page = (address)$src$$constant;
-    Register dst_reg = as_Register($dst$$reg);
-    unsigned long off;
-    __ adrp(dst_reg, Address(page, relocInfo::poll_type), off);
-    assert(off == 0, "assumed offset == 0");
   %}
 
   enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
@@ -4371,17 +4381,6 @@ operand immP0()
 operand immP_1()
 %{
   predicate(n->get_ptr() == 1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Polling Page Pointer Immediate
-operand immPollPage()
-%{
-  predicate((address)n->get_ptr() == os::get_polling_page());
   match(ConP);
 
   op_cost(0);
@@ -7181,20 +7180,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   format %{ "mov  $dst, $con\t# NULL ptr" %}
 
   ins_encode(aarch64_enc_mov_p1(dst, con));
-
-  ins_pipe(ialu_imm);
-%}
-
-// Load Poll Page Constant
-
-instruct loadConPollPage(iRegPNoSp dst, immPollPage con)
-%{
-  match(Set dst con);
-
-  ins_cost(INSN_COST);
-  format %{ "adr  $dst, $con\t# Poll Page Ptr" %}
-
-  ins_encode(aarch64_enc_mov_poll_page(dst, con));
 
   ins_pipe(ialu_imm);
 %}
@@ -16055,14 +16040,14 @@ instruct reduce_add2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegINoSp tmp, 
   effect(TEMP tmp, TEMP tmp2);
   format %{ "umov  $tmp, $src2, S, 0\n\t"
             "umov  $tmp2, $src2, S, 1\n\t"
-            "addw  $dst, $src1, $tmp\n\t"
-            "addw  $dst, $dst, $tmp2\t add reduction2i"
+            "addw  $tmp, $src1, $tmp\n\t"
+            "addw  $dst, $tmp, $tmp2\t# add reduction2I"
   %}
   ins_encode %{
     __ umov($tmp$$Register, as_FloatRegister($src2$$reg), __ S, 0);
     __ umov($tmp2$$Register, as_FloatRegister($src2$$reg), __ S, 1);
-    __ addw($dst$$Register, $src1$$Register, $tmp$$Register);
-    __ addw($dst$$Register, $dst$$Register, $tmp2$$Register);
+    __ addw($tmp$$Register, $src1$$Register, $tmp$$Register);
+    __ addw($dst$$Register, $tmp$$Register, $tmp2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -16074,7 +16059,7 @@ instruct reduce_add4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI
   effect(TEMP tmp, TEMP tmp2);
   format %{ "addv  $tmp, T4S, $src2\n\t"
             "umov  $tmp2, $tmp, S, 0\n\t"
-            "addw  $dst, $tmp2, $src1\t add reduction4i"
+            "addw  $dst, $tmp2, $src1\t# add reduction4I"
   %}
   ins_encode %{
     __ addv(as_FloatRegister($tmp$$reg), __ T4S,
@@ -16093,7 +16078,7 @@ instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegINoSp tmp)
   format %{ "umov  $tmp, $src2, S, 0\n\t"
             "mul   $dst, $tmp, $src1\n\t"
             "umov  $tmp, $src2, S, 1\n\t"
-            "mul   $dst, $tmp, $dst\t mul reduction2i\n\t"
+            "mul   $dst, $tmp, $dst\t# mul reduction2I"
   %}
   ins_encode %{
     __ umov($tmp$$Register, as_FloatRegister($src2$$reg), __ S, 0);
@@ -16114,7 +16099,7 @@ instruct reduce_mul4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI
             "umov  $tmp2, $tmp, S, 0\n\t"
             "mul   $dst, $tmp2, $src1\n\t"
             "umov  $tmp2, $tmp, S, 1\n\t"
-            "mul   $dst, $tmp2, $dst\t mul reduction4i\n\t"
+            "mul   $dst, $tmp2, $dst\t# mul reduction4I"
   %}
   ins_encode %{
     __ ins(as_FloatRegister($tmp$$reg), __ D,
@@ -16136,7 +16121,7 @@ instruct reduce_add2F(vRegF dst, vRegF src1, vecD src2, vecD tmp)
   effect(TEMP tmp, TEMP dst);
   format %{ "fadds $dst, $src1, $src2\n\t"
             "ins   $tmp, S, $src2, 0, 1\n\t"
-            "fadds $dst, $dst, $tmp\t add reduction2f"
+            "fadds $dst, $dst, $tmp\t# add reduction2F"
   %}
   ins_encode %{
     __ fadds(as_FloatRegister($dst$$reg),
@@ -16160,7 +16145,7 @@ instruct reduce_add4F(vRegF dst, vRegF src1, vecX src2, vecX tmp)
             "ins   $tmp, S, $src2, 0, 2\n\t"
             "fadds $dst, $dst, $tmp\n\t"
             "ins   $tmp, S, $src2, 0, 3\n\t"
-            "fadds $dst, $dst, $tmp\t add reduction4f"
+            "fadds $dst, $dst, $tmp\t# add reduction4F"
   %}
   ins_encode %{
     __ fadds(as_FloatRegister($dst$$reg),
@@ -16188,7 +16173,7 @@ instruct reduce_mul2F(vRegF dst, vRegF src1, vecD src2, vecD tmp)
   effect(TEMP tmp, TEMP dst);
   format %{ "fmuls $dst, $src1, $src2\n\t"
             "ins   $tmp, S, $src2, 0, 1\n\t"
-            "fmuls $dst, $dst, $tmp\t add reduction4f"
+            "fmuls $dst, $dst, $tmp\t# mul reduction2F"
   %}
   ins_encode %{
     __ fmuls(as_FloatRegister($dst$$reg),
@@ -16212,7 +16197,7 @@ instruct reduce_mul4F(vRegF dst, vRegF src1, vecX src2, vecX tmp)
             "ins   $tmp, S, $src2, 0, 2\n\t"
             "fmuls $dst, $dst, $tmp\n\t"
             "ins   $tmp, S, $src2, 0, 3\n\t"
-            "fmuls $dst, $dst, $tmp\t add reduction4f"
+            "fmuls $dst, $dst, $tmp\t# mul reduction4F"
   %}
   ins_encode %{
     __ fmuls(as_FloatRegister($dst$$reg),
@@ -16240,7 +16225,7 @@ instruct reduce_add2D(vRegD dst, vRegD src1, vecX src2, vecX tmp)
   effect(TEMP tmp, TEMP dst);
   format %{ "faddd $dst, $src1, $src2\n\t"
             "ins   $tmp, D, $src2, 0, 1\n\t"
-            "faddd $dst, $dst, $tmp\t add reduction2d"
+            "faddd $dst, $dst, $tmp\t# add reduction2D"
   %}
   ins_encode %{
     __ faddd(as_FloatRegister($dst$$reg),
@@ -16260,7 +16245,7 @@ instruct reduce_mul2D(vRegD dst, vRegD src1, vecX src2, vecX tmp)
   effect(TEMP tmp, TEMP dst);
   format %{ "fmuld $dst, $src1, $src2\n\t"
             "ins   $tmp, D, $src2, 0, 1\n\t"
-            "fmuld $dst, $dst, $tmp\t add reduction2d"
+            "fmuld $dst, $dst, $tmp\t# mul reduction2D"
   %}
   ins_encode %{
     __ fmuld(as_FloatRegister($dst$$reg),
@@ -16280,7 +16265,7 @@ instruct reduce_max2F(vRegF dst, vRegF src1, vecD src2, vecD tmp) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "fmaxs $dst, $src1, $src2\n\t"
             "ins   $tmp, S, $src2, 0, 1\n\t"
-            "fmaxs $dst, $dst, $tmp\t max reduction2F" %}
+            "fmaxs $dst, $dst, $tmp\t# max reduction2F" %}
   ins_encode %{
     __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
     __ ins(as_FloatRegister($tmp$$reg), __ S, as_FloatRegister($src2$$reg), 0, 1);
@@ -16295,7 +16280,7 @@ instruct reduce_max4F(vRegF dst, vRegF src1, vecX src2) %{
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst);
   format %{ "fmaxv $dst, T4S, $src2\n\t"
-            "fmaxs $dst, $dst, $src1\t max reduction4F" %}
+            "fmaxs $dst, $dst, $src1\t# max reduction4F" %}
   ins_encode %{
     __ fmaxv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src2$$reg));
     __ fmaxs(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg));
@@ -16310,7 +16295,7 @@ instruct reduce_max2D(vRegD dst, vRegD src1, vecX src2, vecX tmp) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "fmaxd $dst, $src1, $src2\n\t"
             "ins   $tmp, D, $src2, 0, 1\n\t"
-            "fmaxd $dst, $dst, $tmp\t max reduction2D" %}
+            "fmaxd $dst, $dst, $tmp\t# max reduction2D" %}
   ins_encode %{
     __ fmaxd(as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
     __ ins(as_FloatRegister($tmp$$reg), __ D, as_FloatRegister($src2$$reg), 0, 1);
@@ -16326,7 +16311,7 @@ instruct reduce_min2F(vRegF dst, vRegF src1, vecD src2, vecD tmp) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "fmins $dst, $src1, $src2\n\t"
             "ins   $tmp, S, $src2, 0, 1\n\t"
-            "fmins $dst, $dst, $tmp\t min reduction2F" %}
+            "fmins $dst, $dst, $tmp\t# min reduction2F" %}
   ins_encode %{
     __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
     __ ins(as_FloatRegister($tmp$$reg), __ S, as_FloatRegister($src2$$reg), 0, 1);
@@ -16341,7 +16326,7 @@ instruct reduce_min4F(vRegF dst, vRegF src1, vecX src2) %{
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst);
   format %{ "fminv $dst, T4S, $src2\n\t"
-            "fmins $dst, $dst, $src1\t min reduction4F" %}
+            "fmins $dst, $dst, $src1\t# min reduction4F" %}
   ins_encode %{
     __ fminv(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src2$$reg));
     __ fmins(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg));
@@ -16356,7 +16341,7 @@ instruct reduce_min2D(vRegD dst, vRegD src1, vecX src2, vecX tmp) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "fmind $dst, $src1, $src2\n\t"
             "ins   $tmp, D, $src2, 0, 1\n\t"
-            "fmind $dst, $dst, $tmp\t min reduction2D" %}
+            "fmind $dst, $dst, $tmp\t# min reduction2D" %}
   ins_encode %{
     __ fmind(as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
     __ ins(as_FloatRegister($tmp$$reg), __ D, as_FloatRegister($src2$$reg), 0, 1);
@@ -18032,6 +18017,44 @@ instruct vround2D_reg(vecX dst, vecX src, immI rmode) %{
     }
   %}
   ins_pipe(vdop_fp128);
+%}
+
+instruct vpopcount4I(vecX dst, vecX src) %{
+  predicate(UsePopCountInstruction && n->as_Vector()->length() == 4);
+  match(Set dst (PopCountVI src));
+  format %{
+    "cnt     $dst, $src\t# vector (16B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (16B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (8H)"
+  %}
+  ins_encode %{
+     __ cnt(as_FloatRegister($dst$$reg), __ T16B,
+            as_FloatRegister($src$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
+               as_FloatRegister($dst$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
+               as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vpopcount2I(vecD dst, vecD src) %{
+  predicate(UsePopCountInstruction && n->as_Vector()->length() == 2);
+  match(Set dst (PopCountVI src));
+  format %{
+    "cnt     $dst, $src\t# vector (8B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (8B)\n\t"
+    "uaddlp  $dst, $dst\t# vector (4H)"
+  %}
+  ins_encode %{
+     __ cnt(as_FloatRegister($dst$$reg), __ T8B,
+            as_FloatRegister($src$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T8B,
+               as_FloatRegister($dst$$reg));
+     __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
+               as_FloatRegister($dst$$reg));
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 //----------PEEPHOLE RULES-----------------------------------------------------

@@ -56,6 +56,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -2531,7 +2532,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // the rest are checked explicitly now.
         CodeBlob* cb = CodeCache::find_blob(pc);
         if (cb != NULL) {
-          if (os::is_poll_address(addr)) {
+          if (SafepointMechanism::is_poll_address(addr)) {
             address stub = SharedRuntime::get_poll_stub(pc);
             return Handle_Exception(exceptionInfo, stub);
           }
@@ -4115,24 +4116,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-// Mark the polling page as unreadable
-void os::make_polling_page_unreadable(void) {
-  DWORD old_status;
-  if (!VirtualProtect((char *)_polling_page, os::vm_page_size(),
-                      PAGE_NOACCESS, &old_status)) {
-    fatal("Could not disable polling page");
-  }
-}
-
-// Mark the polling page as readable
-void os::make_polling_page_readable(void) {
-  DWORD old_status;
-  if (!VirtualProtect((char *)_polling_page, os::vm_page_size(),
-                      PAGE_READONLY, &old_status)) {
-    fatal("Could not enable polling page");
-  }
-}
-
 // combine the high and low DWORD into a ULONGLONG
 static ULONGLONG make_double_word(DWORD high_word, DWORD low_word) {
   ULONGLONG value = high_word;
@@ -4160,7 +4143,7 @@ static void file_attribute_data_to_stat(struct stat* sbuf, WIN32_FILE_ATTRIBUTE_
 
 static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path) {
   // Get required buffer size to convert to Unicode
-  int unicode_path_len = MultiByteToWideChar(CP_THREAD_ACP,
+  int unicode_path_len = MultiByteToWideChar(CP_ACP,
                                              MB_ERR_INVALID_CHARS,
                                              char_path, -1,
                                              NULL, 0);
@@ -4170,7 +4153,7 @@ static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path) {
 
   *unicode_path = NEW_C_HEAP_ARRAY(WCHAR, unicode_path_len, mtInternal);
 
-  int result = MultiByteToWideChar(CP_THREAD_ACP,
+  int result = MultiByteToWideChar(CP_ACP,
                                    MB_ERR_INVALID_CHARS,
                                    char_path, -1,
                                    *unicode_path, unicode_path_len);
