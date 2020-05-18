@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,16 @@
  * questions.
  */
 
-package jdk.jfr.event.gc.objectcount;
-import jdk.test.lib.jfr.GCHelper;
+package jdk.jfr.events;
+import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.Utils;
 
-/**
- * @test
- * @key jfr
- * @requires vm.hasJFR
- * @requires vm.gc == "Parallel" | vm.gc == null
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithParallelOld
- */
-public class TestObjectCountAfterGCEventWithParallelOld {
-    public static void main(String[] args) throws Exception {
-        ObjectCountAfterGCEvent.test(GCHelper.gcParallelOld);
-    }
+public final class Handlers {
+    public final static EventHandler SOCKET_READ = Utils.getHandler(SocketReadEvent.class);
+    public final static EventHandler SOCKET_WRITE = Utils.getHandler(SocketWriteEvent.class);
+    public final static EventHandler FILE_READ = Utils.getHandler(FileReadEvent.class);
+    public final static EventHandler FILE_WRITE = Utils.getHandler(FileWriteEvent.class);
+    public final static EventHandler FILE_FORCE = Utils.getHandler(FileForceEvent.class);
+    public final static EventHandler ERROR_THROWN = Utils.getHandler(ErrorThrownEvent.class);
+    public final static EventHandler EXCEPTION_THROWN = Utils.getHandler(ExceptionThrownEvent.class);
 }
