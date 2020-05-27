@@ -502,12 +502,23 @@ void trace_method_handle_stub(const char* adaptername,
                 p2i(mh), p2i(entry_sp));
 
   if (Verbose) {
+    ResourceMark rm;
     tty->print_cr("Registers:");
     const int saved_regs_count = RegisterImpl::number_of_registers;
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
+#ifdef AMD64
+      assert(RegisterImpl::number_of_registers == 16, "sanity");
+      if (r == rsp) {
+        // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
+        tty->print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
+      } else {
+        tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+      }
+#else
       tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+#endif
       if ((i + 1) % 4 == 0) {
         tty->cr();
       } else {
@@ -517,12 +528,11 @@ void trace_method_handle_stub(const char* adaptername,
     tty->cr();
 
     {
-     // dumping last frame with frame::describe
+      // dumping last frame with frame::describe
 
       JavaThread* p = JavaThread::active();
 
-      ResourceMark rm;
-      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      PRESERVE_EXCEPTION_MARK; // may not be needed but safer and inexpensive here
       FrameValues values;
 
       // Note: We want to allow trace_method_handle from any call site.
@@ -571,8 +581,9 @@ void trace_method_handle_stub(const char* adaptername,
     if (has_mh && oopDesc::is_oop(mh)) {
       mh->print();
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
-        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0)
+        if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0) {
           java_lang_invoke_MethodHandle::form(mh)->print();
+        }
       }
     }
   }
