@@ -197,37 +197,34 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
         // try to turn a interface call into a virtual call
         ResolvedJavaType declaredReceiverType = targetMethod.getDeclaringClass();
         ResolvedJavaType referencedReceiverType = callTarget.referencedType();
-        if (referencedReceiverType == null) {
-            return callTarget;
-        }
-
-        /*
-         * We need to check the invoke kind to avoid recursive simplification for virtual interface
-         * methods calls.
-         */
-        if (declaredReceiverType.isInterface()) {
-            ResolvedJavaType singleImplementor = referencedReceiverType.getSingleImplementor();
-            // If singleImplementor is equal to declaredReceiverType it means that there are
-            // multiple implementors.
-            if (singleImplementor != null && !singleImplementor.equals(declaredReceiverType)) {
-                TypeReference speculatedType = TypeReference.createTrusted(assumptions, singleImplementor);
-                MethodCallTargetNode callTargetResult = tryCheckCastSingleImplementor(receiver, targetMethod, profile, contextType, speculatedType, insertionPoint, callTarget);
-                if (callTargetResult != null) {
-                    return callTargetResult;
-                }
-            }
-        }
-
-        if (receiver instanceof UncheckedInterfaceProvider) {
-            UncheckedInterfaceProvider uncheckedInterfaceProvider = (UncheckedInterfaceProvider) receiver;
-            Stamp uncheckedStamp = uncheckedInterfaceProvider.uncheckedStamp();
-            if (uncheckedStamp != null) {
-                TypeReference speculatedType = StampTool.typeReferenceOrNull(uncheckedStamp);
-                // speculatedType must be related to the referencedReceiverType.
-                if (speculatedType != null && referencedReceiverType.isAssignableFrom(speculatedType.getType())) {
+        if (referencedReceiverType != null) {
+            /*
+             * We need to check the invoke kind to avoid recursive simplification for virtual interface
+             * methods calls.
+             */
+            if (declaredReceiverType.isInterface()) {
+                ResolvedJavaType singleImplementor = referencedReceiverType.getSingleImplementor();
+                // If singleImplementor is equal to declaredReceiverType it means that there are
+                // multiple implementors.
+                if (singleImplementor != null && !singleImplementor.equals(declaredReceiverType)) {
+                    TypeReference speculatedType = TypeReference.createTrusted(assumptions, singleImplementor);
                     MethodCallTargetNode callTargetResult = tryCheckCastSingleImplementor(receiver, targetMethod, profile, contextType, speculatedType, insertionPoint, callTarget);
                     if (callTargetResult != null) {
                         return callTargetResult;
+                    }
+                }
+            }
+
+            if (receiver instanceof UncheckedInterfaceProvider) {
+                UncheckedInterfaceProvider uncheckedInterfaceProvider = (UncheckedInterfaceProvider) receiver;
+                Stamp uncheckedStamp = uncheckedInterfaceProvider.uncheckedStamp();
+                if (uncheckedStamp != null) {
+                    TypeReference speculatedType = StampTool.typeReferenceOrNull(uncheckedStamp);
+                    if (speculatedType != null && referencedReceiverType.isAssignableFrom(speculatedType.getType())) {
+                        MethodCallTargetNode callTargetResult = tryCheckCastSingleImplementor(receiver, targetMethod, profile, contextType, speculatedType, insertionPoint, callTarget);
+                        if (callTargetResult != null) {
+                            return callTargetResult;
+                        }
                     }
                 }
             }
