@@ -892,7 +892,7 @@ public class CommandProcessor {
             }
         },
         new Command("dumpideal", "dumpideal { -a | id }", false) {
-            // Do a full dump of the nodes reachabile from root in each compiler thread.
+            // Do a full dump of the nodes reachable from root in each compiler thread.
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
                     usage();
@@ -1586,6 +1586,37 @@ public class CommandProcessor {
                         }
                     }
                     if (!all) out.println("Couldn't find thread " + name);
+                }
+            }
+        },
+        new Command("threadcontext", "threadcontext [-v] { -a | id }", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    boolean verbose = false;
+                    String id = t.nextToken();
+                    if (id.equals("-v")) {
+                        verbose = true;
+                        id = t.nextToken();
+                    }
+                    Threads threads = VM.getVM().getThreads();
+                    boolean all = id.equals("-a");
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        thread.printThreadIDOn(new PrintStream(bos));
+                        if (all || bos.toString().equals(i)) {
+                            out.format("Thread \"%s\" id=%s Address=%s\n",
+                                       thread.getThreadName(), bos.toString(), thread.getAddress());
+                            thread.printThreadContextOn(out, verbose);
+                            out.println(" ");
+                            if (!all) return;
+                        }
+                    }
+                    if (!all) {
+                        out.println("Couldn't find thread " + id);
+                    }
                 }
             }
         },

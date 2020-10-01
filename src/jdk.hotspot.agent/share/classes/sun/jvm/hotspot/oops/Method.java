@@ -267,7 +267,8 @@ public class Method extends Metadata {
   }
 
   public void printValueOn(PrintStream tty) {
-    tty.print("Method " + getName().asString() + getSignature().asString() + "@" + getAddress());
+      tty.print("Method " + getMethodHolder().getName().asString() + "." +
+                getName().asString() + getSignature().asString() + "@" + getAddress());
   }
 
   public void iterateFields(MetadataVisitor visitor) {

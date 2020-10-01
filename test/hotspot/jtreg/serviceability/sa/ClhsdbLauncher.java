@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.util.concurrent.TimeUnit;
+import java.time.Instant;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -125,15 +127,29 @@ public class ClhsdbLauncher {
 
         try (OutputStream out = toolProcess.getOutputStream()) {
             for (String cmd : commands) {
+                System.out.println("[" + Instant.now().toString() + "] " + "SENDING: " + cmd);
                 out.write((cmd + "\n").getBytes());
             }
+            System.out.println("[" + Instant.now().toString() + "] " + "SENDING: quit");
             out.write("quit\n".getBytes());
             out.flush();
         }
 
         OutputAnalyzer oa = new OutputAnalyzer(toolProcess);
         try {
-            toolProcess.waitFor();
+            System.out.println("[" + Instant.now().toString() + "] " + "calling waitFor()");
+            boolean result = toolProcess.waitFor(300, TimeUnit.SECONDS);
+            System.out.println("[" + Instant.now().toString() + "] " + "waitFor() returns " + result);
+            if (!result) {
+                toolProcess.destroyForcibly();
+                System.out.println("[" + Instant.now().toString() + "] " + "process destroyed");
+                toolProcess.waitFor();
+                System.out.println("[" + Instant.now().toString() + "] " + "waitFor() returns");
+                output = oa.getOutput();
+                System.out.println("[" + Instant.now().toString() + "] " + "Output: ");
+                System.out.println(output);
+                throw new Error("waitFor() timed out");
+            }
         } catch (InterruptedException ie) {
             toolProcess.destroyForcibly();
             throw new Error("Problem awaiting the child process: " + ie);
