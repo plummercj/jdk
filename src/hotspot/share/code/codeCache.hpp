@@ -136,7 +136,7 @@ class CodeCache : AllStatic {
   static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
 
   // Allocation/administration
-  static CodeBlob* allocate(int size, int code_blob_type, int orig_code_blob_type = CodeBlobType::All); // allocates a new CodeBlob
+  static CodeBlob* allocate(int size, int code_blob_type, bool handle_alloc_failure = true, int orig_code_blob_type = CodeBlobType::All); // allocates a new CodeBlob
   static void commit(CodeBlob* cb);                        // called when the allocated CodeBlob has been filled
   static int  alignment_unit();                            // guaranteed alignment of all CodeBlobs
   static int  alignment_offset();                          // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
@@ -191,6 +191,7 @@ class CodeCache : AllStatic {
   static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
+  LINUX_ONLY(static void write_perf_map();)
   static const char* get_code_heap_name(int code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
   static void report_codemem_full(int code_blob_type, bool print);
 
@@ -409,7 +410,13 @@ struct NMethodFilter {
   static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::nmethod_heaps(); }
 };
 
+struct AllCodeBlobsFilter {
+  static bool apply(CodeBlob* cb) { return true; }
+  static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::heaps(); }
+};
+
 typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter> CompiledMethodIterator;
 typedef CodeBlobIterator<nmethod, NMethodFilter> NMethodIterator;
+typedef CodeBlobIterator<CodeBlob, AllCodeBlobsFilter> AllCodeBlobsIterator;
 
 #endif // SHARE_CODE_CODECACHE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  */
 public class HelpWriter extends HtmlDocletWriter {
 
-    private final Navigation navBar;
-
     private final String[][] SEARCH_EXAMPLES = {
             {"j.l.obj", "\"java.lang.Object\""},
             {"InpStr", "\"java.io.InputStream\""},
@@ -67,7 +65,6 @@ public class HelpWriter extends HtmlDocletWriter {
     public HelpWriter(HtmlConfiguration configuration,
                       DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.HELP, path);
     }
 
     /**
@@ -93,20 +90,12 @@ public class HelpWriter extends HtmlDocletWriter {
     protected void generateHelpFile() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Help_title");
         HtmlTree body = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder helpFileContent = new ContentBuilder();
         addHelpFileContents(helpFileContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         body.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.HELP))
                 .addMainContent(helpFileContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "help", body);
     }
 
@@ -240,6 +229,15 @@ public class HelpWriter extends HtmlDocletWriter {
             Content deprBody = getContent("doclet.help.deprecated.body",
                     links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
             section.add(HtmlTree.P(deprBody));
+            contentTree.add(section);
+        }
+
+        // Preview
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
+            section = newHelpSection(contents.previewAPI);
+            Content previewBody = getContent("doclet.help.preview.body",
+                    links.createLink(DocPaths.PREVIEW_LIST, contents.previewAPI));
+            section.add(HtmlTree.P(previewBody));
             contentTree.add(section);
         }
 

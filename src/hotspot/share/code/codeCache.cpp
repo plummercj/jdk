@@ -483,7 +483,7 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
  * run the constructor for the CodeBlob subclass he is busy
  * instantiating.
  */
-CodeBlob* CodeCache::allocate(int size, int code_blob_type, int orig_code_blob_type) {
+CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool handle_alloc_failure, int orig_code_blob_type) {
   // Possibly wakes up the sweeper thread.
   NMethodSweeper::report_allocation(code_blob_type);
   assert_locked_or_safepoint(CodeCache_lock);
@@ -531,11 +531,13 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, int orig_code_blob_t
             tty->print_cr("Extension of %s failed. Trying to allocate in %s.",
                           heap->name(), get_code_heap(type)->name());
           }
-          return allocate(size, type, orig_code_blob_type);
+          return allocate(size, type, handle_alloc_failure, orig_code_blob_type);
         }
       }
-      MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      if (handle_alloc_failure) {
+        MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+        CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      }
       return NULL;
     }
     if (PrintCodeCacheExtension) {
@@ -559,10 +561,12 @@ void CodeCache::free(CodeBlob* cb) {
   CodeHeap* heap = get_code_heap(cb);
   print_trace("free", cb);
   if (cb->is_nmethod()) {
+    nmethod* ptr = (nmethod *)cb;
     heap->set_nmethod_count(heap->nmethod_count() - 1);
-    if (((nmethod *)cb)->has_dependencies()) {
+    if (ptr->has_dependencies()) {
       _number_of_nmethods_with_dependencies--;
     }
+    ptr->free_native_invokers();
   }
   if (cb->is_adapter_blob()) {
     heap->set_adapter_count(heap->adapter_count() - 1);
@@ -1558,6 +1562,34 @@ void CodeCache::log_state(outputStream* st) {
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }
+
+#ifdef LINUX
+void CodeCache::write_perf_map() {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  char fname[32];
+  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+
+  fileStream fs(fname, "w");
+  if (!fs.is_open()) {
+    log_warning(codecache)("Failed to create %s for perf map", fname);
+    return;
+  }
+
+  AllCodeBlobsIterator iter(AllCodeBlobsIterator::only_alive_and_not_unloading);
+  while (iter.next()) {
+    CodeBlob *cb = iter.method();
+    ResourceMark rm;
+    const char* method_name =
+      cb->is_compiled() ? cb->as_compiled_method()->method()->external_name()
+                        : cb->name();
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
+                method_name);
+  }
+}
+#endif // LINUX
 
 //---<  BEGIN  >--- CodeHeap State Analytics.
 
