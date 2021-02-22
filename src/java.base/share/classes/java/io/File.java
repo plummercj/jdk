@@ -1413,7 +1413,9 @@ public class File
      * file from one filesystem to another, it might not be atomic, and it
      * might not succeed if a file with the destination abstract pathname
      * already exists.  The return value should always be checked to make sure
-     * that the rename operation was successful.
+     * that the rename operation was successful.  As instances of {@code File}
+     * are immutable, this File object is not changed to name the destination
+     * file or directory.
      *
      * <p> Note that the {@link java.nio.file.Files} class defines the {@link
      * java.nio.file.Files#move move} method to move or rename a file in a
