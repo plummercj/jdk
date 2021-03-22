@@ -90,7 +90,7 @@ public class JarInputStream extends ZipInputStream {
     {
         if (e != null && JarFile.MANIFEST_NAME.equalsIgnoreCase(e.getName())) {
             man = new Manifest();
-            byte bytes[] = getBytes(new BufferedInputStream(this));
+            byte[] bytes = readAllBytes();
             man.read(new ByteArrayInputStream(bytes));
             closeEntry();
             if (doVerify) {
@@ -100,18 +100,6 @@ public class JarInputStream extends ZipInputStream {
             return (JarEntry)super.getNextEntry();
         }
         return e;
-    }
-
-    private byte[] getBytes(InputStream is)
-        throws IOException
-    {
-        byte[] buffer = new byte[8192];
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
-        int n;
-        while ((n = is.read(buffer, 0, buffer.length)) != -1) {
-            baos.write(buffer, 0, n);
-        }
-        return baos.toByteArray();
     }
 
     /**
