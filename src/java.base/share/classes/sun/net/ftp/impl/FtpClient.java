@@ -134,17 +134,15 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     private static final boolean acceptPasvAddressVal;
     static {
         final int vals[] = {0, 0};
-        final String encs[] = {null};
         final String acceptPasvAddress[] = {null};
-        AccessController.doPrivileged(
-                new PrivilegedAction<Object>() {
-
-                    public Object run() {
+        @SuppressWarnings("removal")
+        final String enc = AccessController.doPrivileged(
+                new PrivilegedAction<String>() {
+                    public String run() {
                         acceptPasvAddress[0] = System.getProperty("jdk.net.ftp.trustPasvAddress", "false");
                         vals[0] = Integer.getInteger("sun.net.client.defaultReadTimeout", 300_000).intValue();
                         vals[1] = Integer.getInteger("sun.net.client.defaultConnectTimeout", 300_000).intValue();
-                        encs[0] = System.getProperty("file.encoding", "ISO8859_1");
-                        return null;
+                        return System.getProperty("file.encoding", "ISO8859_1");
                     }
                 });
         if (vals[0] == 0) {
@@ -159,7 +157,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             defaultConnectTimeout = vals[1];
         }
 
-        encoding = encs[0];
+        encoding = enc;
         try {
             if (!isASCIISuperset(encoding)) {
                 encoding = "ISO8859_1";
@@ -664,13 +662,10 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
-                s = AccessController.doPrivileged(
-                        new PrivilegedAction<Socket>() {
-
-                            public Socket run() {
-                                return new Socket(proxy);
-                            }
-                        });
+                PrivilegedAction<Socket> pa = () -> new Socket(proxy);
+                @SuppressWarnings("removal")
+                var tmp = AccessController.doPrivileged(pa);
+                s = tmp;
             } else {
                 s = new Socket(Proxy.NO_PROXY);
             }
@@ -678,13 +673,9 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             s = new Socket();
         }
 
-        InetAddress serverAddress = AccessController.doPrivileged(
-                new PrivilegedAction<InetAddress>() {
-                    @Override
-                    public InetAddress run() {
-                        return server.getLocalAddress();
-                    }
-                });
+        PrivilegedAction<InetAddress> pa = () -> server.getLocalAddress();
+        @SuppressWarnings("removal")
+        InetAddress serverAddress = AccessController.doPrivileged(pa);
 
         // Bind the socket to the same address as the control channel. This
         // is needed in case of multi-homed systems.
@@ -772,7 +763,9 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     private static InetAddress privilegedLocalHost() throws FtpProtocolException {
         PrivilegedExceptionAction<InetAddress> action = InetAddress::getLocalHost;
         try {
-            return AccessController.doPrivileged(action);
+            @SuppressWarnings("removal")
+            var tmp = AccessController.doPrivileged(action);
+            return tmp;
         } catch (Exception e) {
             var ftpEx = new FtpProtocolException(ERROR_MSG);
             ftpEx.initCause(e);
@@ -783,7 +776,9 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     private static InetAddress[] privilegedGetAllByName(String hostName) throws FtpProtocolException {
         PrivilegedExceptionAction<InetAddress[]> pAction = () -> InetAddress.getAllByName(hostName);
         try {
-            return AccessController.doPrivileged(pAction);
+            @SuppressWarnings("removal")
+            var tmp =AccessController.doPrivileged(pAction);
+            return tmp;
         } catch (Exception e) {
             var ftpEx = new FtpProtocolException(ERROR_MSG);
             ftpEx.initCause(e);
@@ -1026,13 +1021,10 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
-                s = AccessController.doPrivileged(
-                        new PrivilegedAction<Socket>() {
-
-                            public Socket run() {
-                                return new Socket(proxy);
-                            }
-                        });
+                PrivilegedAction<Socket> pa = () -> new Socket(proxy);
+                @SuppressWarnings("removal")
+                var tmp = AccessController.doPrivileged(pa);
+                s = tmp;
             } else {
                 s = new Socket(Proxy.NO_PROXY);
             }

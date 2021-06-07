@@ -227,6 +227,7 @@ public class ZipFile implements ZipConstants, Closeable {
         }
         String name = file.getPath();
         file = new File(name);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkRead(name);
@@ -1236,8 +1237,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             public boolean equals(Object obj) {
-                if (obj instanceof Key) {
-                    Key key = (Key)obj;
+                if (obj instanceof Key key) {
                     if (key.utf8 != utf8) {
                         return false;
                     }
