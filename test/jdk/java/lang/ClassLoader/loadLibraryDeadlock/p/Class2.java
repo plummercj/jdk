@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,17 +21,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.java.lang.invoke.t8150782;
 
-import static java.lang.invoke.MethodHandles.*;
+/*
+ * Class2 is loaded from Thread #2 that checks jar signature and from
+ * Thread #1 that loads a native library.
+ */
+package p;
 
-public class TestCls {
-
-    public static final Lookup LOOKUP = lookup();
-
-    private static class PrivateSIC {}
-    public static Class getPrivateSIC() { return PrivateSIC.class; }
-    public static Lookup getLookupForPrivateSIC() { return lookup(); }
-
-}
-
+class Class2 {}
