@@ -65,7 +65,7 @@ public final class EventFileStream extends AbstractEventStream {
 
     @Override
     public void close() {
-        setClosed(true);
+        closeParser();
         dispatcher().runCloseActions();
         try {
             input.close();
@@ -86,7 +86,7 @@ public final class EventFileStream extends AbstractEventStream {
             end = disp.endNanos;
         }
 
-        currentParser = new ChunkParser(input, disp.parserConfiguration);
+        currentParser = new ChunkParser(input, disp.parserConfiguration, parserState);
         while (!isClosed()) {
             onMetadata(currentParser);
             if (currentParser.getStartNanos() > end) {
