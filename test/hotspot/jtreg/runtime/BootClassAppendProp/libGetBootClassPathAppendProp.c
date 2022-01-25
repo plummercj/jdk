@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,44 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1BUFFERNODELIST_HPP
-#define SHARE_GC_G1_G1BUFFERNODELIST_HPP
+#include <stdio.h>
+#include <string.h>
+#include <jvmti.h>
 
-#include "utilities/globalDefinitions.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-class BufferNode;
+static jvmtiEnv *jvmti = NULL;
 
-struct G1BufferNodeList {
-  BufferNode* _head;            // First node in list or NULL if empty.
-  BufferNode* _tail;            // Last node in list or NULL if empty.
-  size_t _entry_count;          // Sum of entries in nodes in list.
+JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  int err = (*jvm)->GetEnv(jvm, (void**) &jvmti, JVMTI_VERSION_9);
+  if (err != JNI_OK) {
+    return JNI_ERR;
+  }
+  return JNI_OK;
+}
 
-  G1BufferNodeList();
-  G1BufferNodeList(BufferNode* head, BufferNode* tail, size_t entry_count);
-};
+JNIEXPORT jstring JNICALL
+Java_GetBootClassPathAppendProp_getSystemProperty(JNIEnv *env, jclass cls) {
+  jvmtiError err;
+  char* prop_value;
 
-#endif // SHARE_GC_G1_G1BUFFERNODELIST_HPP
+  err = (*jvmti)->GetSystemProperty(jvmti, "jdk.boot.class.path.append", &prop_value);
+  if (err == JVMTI_ERROR_NOT_AVAILABLE) {
+    return NULL;
+  }
+  if (err != JVMTI_ERROR_NONE) {
+    char err_msg[50];
+    snprintf(err_msg, 50, "Wrong JVM TI error code: %d", err);
+    return (*env)->NewStringUTF(env, err_msg);
+  }
 
+  return (*env)->NewStringUTF(env, prop_value);
+}
+
+#ifdef __cplusplus
+}
+#endif

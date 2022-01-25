@@ -1029,7 +1029,6 @@ public final class KeychainStore extends KeyStoreSpi {
             byte[] safeContentsData;
             ContentInfo safeContents;
             DerInputStream sci;
-            byte[] eAlgId = null;
 
             sci = new DerInputStream(safeContentsArray[i].toByteArray());
             safeContents = new ContentInfo(sci);
@@ -1068,7 +1067,6 @@ public final class KeychainStore extends KeyStoreSpi {
             ObjectIdentifier bagId;
             DerInputStream sbi;
             DerValue bagValue;
-            Object bagItem = null;
 
             sbi = safeBags[i].toDerInputStream();
             bagId = sbi.getOID();
