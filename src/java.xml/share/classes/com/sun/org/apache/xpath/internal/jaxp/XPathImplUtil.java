@@ -216,14 +216,14 @@ class XPathImplUtil {
      */
     <T> void isSupportedClassType(Class<T> type) {
         requireNonNull(type, "The class type");
-        if (type.isAssignableFrom(Boolean.class) ||
-                type.isAssignableFrom(Double.class) ||
-                type.isAssignableFrom(Integer.class) ||
-                type.isAssignableFrom(Long.class) ||
-                type.isAssignableFrom(String.class) ||
-                type.isAssignableFrom(XPathNodes.class) ||
-                type.isAssignableFrom(Node.class) ||
-                type.isAssignableFrom(XPathEvaluationResult.class)) {
+        if (type == Boolean.class ||
+                type == Double.class ||
+                type == Integer.class ||
+                type == Long.class ||
+                type == String.class ||
+                type == XPathNodes.class ||
+                type == Node.class ||
+                type == XPathEvaluationResult.class) {
             return;
         }
         String fmsg = XSLMessages.createXPATHMessage(
