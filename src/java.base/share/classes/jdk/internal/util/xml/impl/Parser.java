@@ -55,9 +55,9 @@ public abstract class Parser {
     private Pair mNoNS; // there is no namespace
     private Pair mXml;  // the xml namespace
     private Map<String, Input> mEnt;  // the entities look up table
-    private Map<String, Input> mPEnt; // the parmeter entities look up table
+    private Map<String, Input> mPEnt; // the parameter entities look up table
     protected boolean mIsSAlone;     // xml decl standalone flag
-    protected boolean mIsSAloneSet;  // standalone is explicitely set
+    protected boolean mIsSAloneSet;  // standalone is explicitly set
     protected boolean mIsNSAware;    // if true - namespace aware mode
     protected int mPh;  // current phase of document processing
     protected static final int PH_BEFORE_DOC = -1;  // before parsing
@@ -221,11 +221,11 @@ public abstract class Parser {
         while (i < 'A') {
             nmttyp[i++] = (byte) 0xff;
         }
-        // skiped upper case alphabetical character are already 0
+        // skipped upper case alphabetical character are already 0
         for (i = '['; i < 'a'; i++) {
             nmttyp[i] = (byte) 0xff;
         }
-        // skiped lower case alphabetical character are already 0
+        // skipped lower case alphabetical character are already 0
         for (i = '{'; i < 0x80; i++) {
             nmttyp[i] = (byte) 0xff;
         }
@@ -276,7 +276,7 @@ public abstract class Parser {
         mEnt = new HashMap<>();
         mDoc = mInp;          // current input is document entity
         mChars = mInp.chars;    // use document entity buffer
-        mPh = PH_DOC_START;  // the begining of the document
+        mPh = PH_DOC_START;  // the beginning of the document
     }
 
     /**
@@ -315,7 +315,7 @@ public abstract class Parser {
         mPEnt = null;
         mEnt = null;
         mDoc = null;
-        mPh = PH_AFTER_DOC;  // before documnet processing
+        mPh = PH_AFTER_DOC;  // before document processing
     }
 
     /**
@@ -401,7 +401,7 @@ public abstract class Parser {
                             mElm.name = mElm.local();
                             mElm.id = (mElm.next != null) ? mElm.next.id : 0;  // flags
                             mElm.num = 0;     // namespace counter
-                            //          Find the list of defined attributs of the current
+                            //          Find the list of defined attributes of the current
                             //          element
                             Pair elm = find(mAttL, mElm.chars);
                             mElm.list = (elm != null) ? elm.list : null;
@@ -1334,7 +1334,7 @@ public abstract class Parser {
      * and accumulates attributes.
      *
      * <p><code>att.num</code> carries attribute flags where: 0x1 - attribute is
-     * declared in DTD (attribute decalration had been read); 0x2 - attribute's
+     * declared in DTD (attribute declaration had been read); 0x2 - attribute's
      * default value is used.</p>
      *
      * @param att An object which reprecents current attribute.
@@ -1605,7 +1605,7 @@ public abstract class Parser {
                                 panic(FAULT);
                             }
                             //          This is processing instruction
-                            if (mPh == PH_DOC_START) // the begining of the document
+                            if (mPh == PH_DOC_START) // the beginning of the document
                             {
                                 mPh = PH_MISC_DTD;    // misc before DTD
                             }
@@ -2074,7 +2074,7 @@ public abstract class Parser {
     }
 
     /**
-     * Resoves a parameter entity.
+     * Resolves a parameter entity.
      *
      * This method resolves a parameter entity references. It is also reports
      * external entities to the application.
@@ -2251,7 +2251,7 @@ public abstract class Parser {
     /**
      * Reports a comment.
      *
-     * @param text The comment text starting from first charcater.
+     * @param text The comment text starting from first character.
      * @param length The number of characters in comment.
      */
     protected abstract void comm(char[] text, int length);
