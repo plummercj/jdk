@@ -126,7 +126,7 @@ static unsigned char* getIGTable(int gamma) {
 JNIEXPORT jboolean JNICALL
     Java_sun_font_FileFontStrike_initNative(JNIEnv *env, jclass unused) {
 
-    memset(igLUTable, 0,  LCDLUTCOUNT);
+    memset(igLUTable, 0, sizeof igLUTable);
 
     return JNI_TRUE;
 }
