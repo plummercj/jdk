@@ -688,10 +688,6 @@ const int ObjectAlignmentInBytes = 8;
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
                                                                             \
-  product(bool, EnableWaitForParallelLoad, false,                           \
-          "(Deprecated) Enable legacy parallel classloading logic for "     \
-          "class loaders not registered as parallel capable")               \
-                                                                            \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
@@ -1194,7 +1190,7 @@ const int ObjectAlignmentInBytes = 8;
           "Trace frequency based inlining")                                 \
                                                                             \
   develop_pd(bool, InlineIntrinsics,                                        \
-          "Inline intrinsics that can be statically resolved")              \
+          "Use intrinsics in Interpreter that can be statically resolved")  \
                                                                             \
   product_pd(bool, ProfileInterpreter,                                      \
           "Profile at the bytecode level during interpretation")            \
