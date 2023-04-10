@@ -1333,8 +1333,8 @@ class ZipFileSystem extends FileSystem {
             }
             // parent exists
             lookup = lookup.as(node.name, off);
-            if (inodes.containsKey(lookup)) {
-                parent = inodes.get(lookup);
+            parent = inodes.get(lookup);
+            if (parent != null) {
                 node.sibling = parent.child;
                 parent.child = node;
                 break;
