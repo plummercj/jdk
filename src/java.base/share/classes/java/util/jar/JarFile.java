@@ -207,11 +207,17 @@ public class JarFile extends ZipFile {
     public static final String MANIFEST_NAME = META_INF + "MANIFEST.MF";
 
     /**
+     * The 'JAR index' feature has been removed, but JarInputStream and
+     * JarVerifier's verification of signed jars still need to be
+     * able to skip this entry.
+     */
+    static final String INDEX_NAME = "META-INF/INDEX.LIST";
+
+    /**
      * Returns the version that represents the unversioned configuration of a
      * multi-release jar file.
      *
      * @return the version that represents the unversioned configuration
-     *
      * @since 9
      */
     public static Runtime.Version baseVersion() {
