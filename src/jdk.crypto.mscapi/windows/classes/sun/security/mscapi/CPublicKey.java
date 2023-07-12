@@ -93,13 +93,13 @@ public abstract class CPublicKey extends CKey implements PublicKey {
             if (encoding == null) {
                 try {
                     encoding = KeyFactory.getInstance("EC").generatePublic(
-                                new ECPublicKeySpec(getW(), getParams()))
-                            .getEncoded();
+                            new ECPublicKeySpec(getW(), getParams()))
+                        .getEncoded();
                 } catch (Exception e) {
                     // ignore
                 }
             }
-            return encoding;
+            return (encoding == null) ? null : encoding.clone();
         }
 
         @Override
@@ -187,7 +187,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                     // ignore
                 }
             }
-            return encoding;
+            return (encoding == null) ? null : encoding.clone();
         }
 
         private native byte[] getExponent(byte[] keyBlob) throws KeyException;
