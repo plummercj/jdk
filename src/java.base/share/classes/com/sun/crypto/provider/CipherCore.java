@@ -868,12 +868,6 @@ final class CipherCore {
     private byte[] prepareInputBuffer(byte[] input, int inputOffset,
                       int inputLen, byte[] output, int outputOffset)
                       throws IllegalBlockSizeException, ShortBufferException {
-
-        if (buffered == 0 && inputLen == 0) {
-            throw new IllegalBlockSizeException("doFinal cannot be called " +
-                    "with an empty message");
-        }
-
         // calculate total input length
         int len = Math.addExact(buffered, inputLen);
         // calculate padding length
