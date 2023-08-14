@@ -2138,17 +2138,11 @@ public class PolicyFile extends java.security.Policy {
         }
 
         /**
-         * Returns the hash code value for this object.
-         *
-         * @return a hash code value for this object.
+         * {@return the hash code value for this object}
          */
         @Override public int hashCode() {
-            int hash = type.hashCode();
-            if (name != null)
-                hash ^= name.hashCode();
-            if (actions != null)
-                hash ^= actions.hashCode();
-            return hash;
+            return type.hashCode() ^ Objects.hashCode(name)
+                    ^ Objects.hashCode(actions);
         }
 
         /**

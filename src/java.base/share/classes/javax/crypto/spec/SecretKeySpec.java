@@ -201,11 +201,9 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-        for (int i = 1; i < this.key.length; i++) {
-            retval += this.key[i] * i;
-        }
+        int retval = Arrays.hashCode(key);
         if (this.algorithm.equalsIgnoreCase("TripleDES"))
             return retval ^ "desede".hashCode();
         else
@@ -223,14 +221,15 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @return true if the objects are considered equal, false if
      * <code>obj</code> is null or otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
 
-        if (!(obj instanceof SecretKey))
+        if (!(obj instanceof SecretKey that))
             return false;
 
-        String thatAlg = ((SecretKey)obj).getAlgorithm();
+        String thatAlg = that.getAlgorithm();
         if (!(thatAlg.equalsIgnoreCase(this.algorithm))) {
             if ((!(thatAlg.equalsIgnoreCase("DESede"))
                  || !(this.algorithm.equalsIgnoreCase("TripleDES")))
@@ -239,7 +238,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
             return false;
         }
 
-        byte[] thatKey = ((SecretKey)obj).getEncoded();
+        byte[] thatKey = that.getEncoded();
         try {
             return MessageDigest.isEqual(this.key, thatKey);
         } finally {
