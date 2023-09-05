@@ -91,11 +91,12 @@ final class DESedeKey implements SecretKey {
     }
 
     public byte[] getEncoded() {
-        // The key is zeroized by finalize()
-        // The reachability fence ensures finalize() isn't called early
-        byte[] result = key.clone();
-        Reference.reachabilityFence(this);
-        return result;
+        try {
+            return key.clone();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     public String getAlgorithm() {
@@ -112,26 +113,36 @@ final class DESedeKey implements SecretKey {
      */
     @Override
     public int hashCode() {
-        return Arrays.hashCode(this.key) ^ "desede".hashCode();
+        try {
+            return Arrays.hashCode(this.key) ^ "desede".hashCode();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
+        try {
+            if (this == obj)
+                return true;
 
-        if (!(obj instanceof SecretKey that))
-            return false;
+            if (!(obj instanceof SecretKey that))
+                return false;
 
-        String thatAlg = that.getAlgorithm();
-        if (!(thatAlg.equalsIgnoreCase("DESede"))
-            && !(thatAlg.equalsIgnoreCase("TripleDES")))
-            return false;
+            String thatAlg = that.getAlgorithm();
+            if (!(thatAlg.equalsIgnoreCase("DESede"))
+                && !(thatAlg.equalsIgnoreCase("TripleDES")))
+                return false;
 
-        byte[] thatKey = that.getEncoded();
-        boolean ret = MessageDigest.isEqual(this.key, thatKey);
-        java.util.Arrays.fill(thatKey, (byte)0x00);
-        return ret;
+            byte[] thatKey = that.getEncoded();
+            boolean ret = MessageDigest.isEqual(this.key, thatKey);
+            java.util.Arrays.fill(thatKey, (byte)0x00);
+            return ret;
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -149,14 +160,16 @@ final class DESedeKey implements SecretKey {
         if ((key == null) || (key.length != DESedeKeySpec.DES_EDE_KEY_LEN)) {
             throw new InvalidObjectException("Wrong key size");
         }
-        key = key.clone();
+        byte[] temp = key;
+        this.key = temp.clone();
+        java.util.Arrays.fill(temp, (byte)0x00);
 
         DESKeyGenerator.setParityBit(key, 0);
         DESKeyGenerator.setParityBit(key, 8);
         DESKeyGenerator.setParityBit(key, 16);
 
         // Use the cleaner to zero the key when no longer referenced
-        final byte[] k = key;
+        final byte[] k = this.key;
         CleanerFactory.cleaner().register(this,
                 () -> java.util.Arrays.fill(k, (byte)0x00));
     }
@@ -171,9 +184,14 @@ final class DESedeKey implements SecretKey {
      */
     @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
-        return new KeyRep(KeyRep.Type.SECRET,
-                getAlgorithm(),
-                getFormat(),
-                key);
+        try {
+            return new KeyRep(KeyRep.Type.SECRET,
+                    getAlgorithm(),
+                    getFormat(),
+                    key);
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 }
