@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -74,11 +75,8 @@ Symbol::Symbol(const Symbol& s1) {
 
 #if INCLUDE_CDS
 void Symbol::update_identity_hash() {
-  // This is called at a safepoint during dumping of a static CDS archive. The caller should have
-  // called os::init_random() with a deterministic seed and then iterate all archived Symbols in
-  // a deterministic order.
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), PERM_REFCOUNT);
+  _hash_and_refcount =  pack_hash_and_refcount((short)ArchiveBuilder::current()->entropy(), PERM_REFCOUNT);
 }
 
 void Symbol::set_permanent() {
