@@ -129,6 +129,9 @@ public:
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
+  // Should we align vector memory references on this platform?
+  static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
+
 #ifndef PRODUCT
   const VTrace& vtrace()      const { return _vtrace; }
 
@@ -706,7 +709,7 @@ private:
 //
 class VPointer : public ArenaObj {
  protected:
-  const MemNode*  _mem;      // My memory reference node
+  MemNode* const  _mem;      // My memory reference node
   const VLoop&    _vloop;
 
   // Components of the simple form:
@@ -756,12 +759,12 @@ class VPointer : public ArenaObj {
     NotComparable = (Less | Greater | Equal)
   };
 
-  VPointer(const MemNode* mem, const VLoop& vloop) :
+  VPointer(MemNode* const mem, const VLoop& vloop) :
     VPointer(mem, vloop, nullptr, false) {}
-  VPointer(const MemNode* mem, const VLoop& vloop, Node_Stack* nstack) :
+  VPointer(MemNode* const mem, const VLoop& vloop, Node_Stack* nstack) :
     VPointer(mem, vloop, nstack, true) {}
  private:
-  VPointer(const MemNode* mem, const VLoop& vloop,
+  VPointer(MemNode* const mem, const VLoop& vloop,
            Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
@@ -776,7 +779,7 @@ class VPointer : public ArenaObj {
 
   Node* base()             const { return _base; }
   Node* adr()              const { return _adr; }
-  const MemNode* mem()     const { return _mem; }
+  MemNode* mem()           const { return _mem; }
   int   scale_in_bytes()   const { return _scale; }
   Node* invar()            const { return _invar; }
   int   offset_in_bytes()  const { return _offset; }
@@ -860,6 +863,11 @@ class VPointer : public ArenaObj {
   static bool not_equal(int cmp)  { return cmp <= NotEqual; }
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
+
+  // We need to be able to sort the VPointer to efficiently group the
+  // memops into groups, and to find adjacent memops.
+  static int cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2);
+  static int cmp_for_sort(const VPointer** p1, const VPointer** p2);
 
   NOT_PRODUCT( void print() const; )
 
@@ -1398,6 +1406,14 @@ private:
                                   const int q,
                                   const int r) const;
 #endif
+};
+
+struct VTransformBoolTest {
+  const BoolTest::mask _mask;
+  const bool _is_negated;
+
+  VTransformBoolTest(const BoolTest::mask mask, bool is_negated) :
+    _mask(mask), _is_negated(is_negated) {}
 };
 
 #endif // SHARE_OPTO_VECTORIZATION_HPP
