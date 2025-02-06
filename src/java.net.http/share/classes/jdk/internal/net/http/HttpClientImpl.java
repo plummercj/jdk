@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1634,11 +1634,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     @Override
     public Optional<ProxySelector> proxy() {
         return Optional.ofNullable(userProxySelector);
-    }
-
-    // Return the effective proxy that this client uses.
-    ProxySelector proxySelector() {
-        return proxySelector;
     }
 
     @Override
