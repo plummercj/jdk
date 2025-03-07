@@ -172,13 +172,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         public void ensureExecutedAsync(Runnable command) {
             try {
                 delegate.execute(command);
-            } catch (Throwable t) {
+            } catch (RejectedExecutionException t) {
                 errorHandler.accept(command, t);
                 ASYNC_POOL.execute(command);
             }
         }
 
-        private void shutdown() {
+        void shutdown() {
             if (delegate instanceof ExecutorService service) {
                 service.shutdown();
             }
