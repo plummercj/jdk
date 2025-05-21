@@ -571,6 +571,8 @@ public class FtpURLConnection extends URLConnection {
      * @return  The {@code Permission} object.
      */
     @Override
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() {
         if (permission == null) {
             int urlport = url.getPort();
