@@ -74,7 +74,6 @@ import jdk.internal.net.http.common.DebugLogger.LoggerConfig;
 import jdk.internal.net.http.HttpRequestImpl;
 
 import sun.net.NetProperties;
-import sun.net.util.IPAddressUtil;
 import sun.net.www.HeaderParser;
 
 import static java.lang.String.format;
@@ -510,39 +509,6 @@ public final class Utils {
         return !token.isEmpty();
     }
 
-    public record ServerName (String name, boolean isLiteral) {
-    }
-
-    /**
-     * Analyse the given address and determine if it is literal or not,
-     * returning the address in String form.
-     */
-    public static ServerName getServerName(InetSocketAddress addr) {
-        String host = addr.getHostString();
-        byte[] literal = IPAddressUtil.textToNumericFormatV4(host);
-        if (literal == null) {
-            // not IPv4 literal. Check IPv6
-            literal = IPAddressUtil.textToNumericFormatV6(host);
-            return new ServerName(host, literal != null);
-        } else {
-            return new ServerName(host, true);
-        }
-    }
-
-    private static boolean isLoopbackLiteral(byte[] bytes) {
-        if (bytes.length == 4) {
-            return bytes[0] == 127;
-        } else if (bytes.length == 16) {
-            for (int i=0; i<14; i++)
-                if (bytes[i] != 0)
-                    return false;
-            if (bytes[15] != 1)
-                return false;
-            return true;
-        } else
-            throw new InternalError();
-    }
-
     /*
      * Validates an RFC 7230 field-value.
      *
@@ -916,33 +882,6 @@ public final class Utils {
     public static Logger getDebugLogger(Supplier<String> dbgTag, boolean on) {
         LoggerConfig config = on ? DEBUG_CONFIG : LoggerConfig.OFF;
         return DebugLogger.createHttpLogger(dbgTag, config);
-    }
-
-    /**
-     * Return the host string from a HttpRequestImpl
-     *
-     * @param request
-     * @return
-     */
-    public static String hostString(HttpRequestImpl request) {
-        URI uri = request.uri();
-        int port = uri.getPort();
-        String host = uri.getHost();
-
-        boolean defaultPort;
-        if (port == -1) {
-            defaultPort = true;
-        } else if (uri.getScheme().equalsIgnoreCase("https")) {
-            defaultPort = port == 443;
-        } else {
-            defaultPort = port == 80;
-        }
-
-        if (defaultPort) {
-            return host;
-        } else {
-            return host + ":" + port;
-        }
     }
 
     /**
