@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class addthreadfilter001a {
     //====================================================== test program
 
     static Thread thread2 = null;
+    static Thread thread1 = null;
 
     //------------------------------------------------------ common section
 
@@ -98,9 +99,11 @@ public class addthreadfilter001a {
     //------------------------------------------------------  section tested
 
                     case 0:
+                           thread1 = JDIThreadFactory.newThread(new Thread2addthreadfilter001a("thread1"));
                            thread2 = JDIThreadFactory.newThread(new Thread2addthreadfilter001a("thread2"));
                            methodForCommunication();
 
+                           threadStart(thread1);
                            threadStart(thread2);
 
     //-------------------------------------------------    standard end section

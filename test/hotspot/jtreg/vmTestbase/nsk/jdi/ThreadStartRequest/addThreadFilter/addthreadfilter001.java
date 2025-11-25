@@ -215,6 +215,7 @@ public class addthreadfilter001 extends JDIBase {
             log3("ERROR: VMDisconnectedException : " + e);
             return 2;
         } catch ( Exception e ) {
+            e.printStackTrace(System.out);
             log3("ERROR: Exception : " + e);
             return 1;
         }
@@ -264,32 +265,56 @@ public class addthreadfilter001 extends JDIBase {
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ variable part
 
-            ThreadReference testThread = (ThreadReference)
+            ThreadReference testThread1 = (ThreadReference)
+                                  debuggeeClass.getValue(debuggeeClass.fieldByName("thread1"));
+            ThreadReference testThread2 = (ThreadReference)
                                   debuggeeClass.getValue(debuggeeClass.fieldByName("thread2"));
 
             log1("     TESTING BEGINS");
 
             log2("......setting up ThreadStartRequest");
             ThreadStartRequest tsr1 = eventRManager.createThreadStartRequest();
-            tsr1.addThreadFilter(testThread);
+            tsr1.addThreadFilter(testThread2);
             tsr1.addCountFilter(1);
             tsr1.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr1.putProperty("number", "ThreadStartRequest1");
             tsr1.enable();
 
             ThreadStartRequest tsr2 = eventRManager.createThreadStartRequest();
-            tsr2.addThreadFilter(testThread);
+            tsr2.addThreadFilter(testThread2);
             tsr2.addCountFilter(1);
             tsr2.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr2.putProperty("number", "ThreadStartRequest2");
             tsr2.enable();
 
             ThreadStartRequest tsr3 = eventRManager.createThreadStartRequest();
-            tsr3.addThreadFilter(testThread);
+            tsr3.addThreadFilter(testThread2);
             tsr3.addCountFilter(1);
             tsr3.setSuspendPolicy(EventRequest.SUSPEND_ALL);
             tsr3.putProperty("number", "ThreadStartRequest3");
             tsr3.enable();
+
+            // This 4th ThreadStartRequest gets disabled immediately after enabling.
+            // The purpose is to make sure the disable doesn't impact the ThreadStartRequests
+            // that are still enabled.
+            ThreadStartRequest tsr4 = eventRManager.createThreadStartRequest();
+            tsr4.addThreadFilter(testThread2);
+            tsr4.addCountFilter(1);
+            tsr4.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+            tsr4.putProperty("number", "ThreadStartRequest4");
+            tsr4.enable();
+
+            // Similar testing purpose as the previous ThreadStartRequest, but this time
+            // with a different filter thread.
+            ThreadStartRequest tsr5 = eventRManager.createThreadStartRequest();
+            tsr5.addThreadFilter(testThread1);
+            tsr5.addCountFilter(1);
+            tsr5.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+            tsr5.putProperty("number", "ThreadStartRequest4");
+            tsr5.enable();
+
+            tsr4.disable();
+            tsr5.disable();
 
             log2("......vm.resume();");
             vm.resume();

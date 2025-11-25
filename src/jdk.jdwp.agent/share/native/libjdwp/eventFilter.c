@@ -1279,9 +1279,17 @@ matchHasNoPlatformThreadsOnlyFilter(JNIEnv *env, HandlerNode *node, void *arg)
     if (hasPlatformThreadsOnlyFilter(node)) {
         return JNI_FALSE;
     } else {
-        // If this handler does not have a PlatformThreadsOnly filter, then we
-        // only return true if the threads also match, or are both NULL.
-        return isSameObject(env, reqThread, goalThread);
+        if (node->ei == EI_THREAD_START) {
+            // For THREAD_START requests, we ignore any filter thread that may be specified.
+            // JVMTI does not have the ability to limit THREAD_START events to a specific
+            // thread, so we'll end up enabling THREAD_START globally. So just act like
+            // the event request didn't specify a thread.
+            return JNI_TRUE;
+        } else {
+            // If this handler does not have a PlatformThreadsOnly filter, then we
+            // only return true if the threads also match, or are both NULL.
+            return isSameObject(env, reqThread, goalThread);
+        }
     }
 }
 
