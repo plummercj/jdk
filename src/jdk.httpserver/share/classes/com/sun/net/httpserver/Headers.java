@@ -63,9 +63,9 @@ import sun.net.httpserver.Utils;
  * <ul>
  *     <li>{@link #getFirst(String)} returns a single valued header or the first
  *     value of a multi-valued header.
- *     <li>{@link #add(String,String)} adds the given header value to the list
+ *     <li>{@link #add(String, String)} adds the given header value to the list
  *     for the given key.
- *     <li>{@link #set(String,String)} sets the given header field to the single
+ *     <li>{@link #set(String, String)} sets the given header field to the single
  *     value given overwriting any existing values in the value list.
  * </ul>
  *
@@ -81,9 +81,9 @@ import sun.net.httpserver.Utils;
  * {@code null} keys will never be present in HTTP request or response headers.
  * @since 1.6
  */
-public class Headers implements Map<String,List<String>> {
+public class Headers implements Map<String, List<String>> {
 
-    HashMap<String,List<String>> map;
+    HashMap<String, List<String>> map;
 
     /**
      * Creates an empty instance of {@code Headers}.
@@ -100,7 +100,7 @@ public class Headers implements Map<String,List<String>> {
      *                              null.
      * @since 18
      */
-    public Headers(Map<String,List<String>> headers) {
+    public Headers(Map<String, List<String>> headers) {
         Objects.requireNonNull(headers);
         var h = headers.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(
@@ -241,7 +241,7 @@ public class Headers implements Map<String,List<String>> {
         List<String> l = map.get(k);
         if (l == null) {
             l = new LinkedList<>();
-            map.put(k,l);
+            map.put(k, l);
         }
         l.add(value);
     }
@@ -355,7 +355,7 @@ public class Headers implements Map<String,List<String>> {
      *                              null.
      * @since 18
      */
-    public static Headers of(Map<String,List<String>> headers) {
+    public static Headers of(Map<String, List<String>> headers) {
         return new UnmodifiableHeaders(new Headers(headers));
     }
 }
