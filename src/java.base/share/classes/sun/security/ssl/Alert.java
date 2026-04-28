@@ -282,11 +282,13 @@ public enum Alert {
                             (tc.sslConfig.clientAuthType ==
                                     ClientAuthType.CLIENT_AUTH_REQUESTED)) {
 
-                        // We'll ignore the warning and remove the Certificate
-                        // and CertificateVerify handshake consumers so the
-                        // state machine isn't expecting them.
+                        // We'll ignore the warning and remove the Certificate,
+                        // CompressedCertificate and CertificateVerify handshake
+                        // consumers so the state machine isn't expecting them.
                         if (hc.handshakeConsumers.remove(
                                 SSLHandshake.CERTIFICATE.id) != null) {
+                            hc.handshakeConsumers.remove(
+                                SSLHandshake.COMPRESSED_CERTIFICATE.id);
                             hc.handshakeConsumers.remove(
                                 SSLHandshake.CERTIFICATE_VERIFY.id);
                         } else {
