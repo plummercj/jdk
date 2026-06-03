@@ -2222,11 +2222,11 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   CompressedLineNumberWriteStream* linenumber_table = nullptr;
   int linenumber_table_length = 0;
   int total_lvt_length = 0;
-  u2 lvt_cnt = 0;
-  u2 lvtt_cnt = 0;
+  int lvt_cnt = 0;
+  int lvtt_cnt = 0;
   bool lvt_allocated = false;
-  u2 max_lvt_cnt = INITIAL_MAX_LVT_NUMBER;
-  u2 max_lvtt_cnt = INITIAL_MAX_LVT_NUMBER;
+  int max_lvt_cnt = INITIAL_MAX_LVT_NUMBER;
+  int max_lvtt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2* localvariable_table_length = nullptr;
   const unsafe_u2** localvariable_table_start = nullptr; // (potentially unaligned) pointer to array of LVT attributes
   u2* localvariable_type_table_length = nullptr;
