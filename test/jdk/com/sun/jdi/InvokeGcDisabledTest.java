@@ -70,12 +70,12 @@ class InvokeGcDisabledTarg {
     InvokeGcDisabledTarg() {
         System.out.println("InvokeGcDisabledTarg::InvokeGcDisabledTarg called");
     }
-    
+
     InvokeGcDisabledTarg(boolean ignore) {
         System.out.println("InvokeGcDisabledTarg::InvokeGcDisabledTarg for exception called");
         throw new RuntimeException("Exception from debuggee");
     }
-    
+
     Object newObject() {
         System.out.println("InvokeGcDisabledTarg::newObject called");
         return new Object();
@@ -149,12 +149,12 @@ public class InvokeGcDisabledTest extends TestScaffold {
         println("Forcing debuggee full GC");
         thisObject.invokeMethod(mainThread, forceDebuggeeGCMethod, emptyArgs, ObjectReference.INVOKE_SINGLE_THREADED);
     }
-    
+
     ObjectReference invoke(Method method, InvokeType invokeType, int options, boolean throwsException)
             throws Exception {
         Value returnValue = null;
         options = options | ObjectReference.INVOKE_SINGLE_THREADED;
-        
+
         try {
             switch (invokeType) {
             case VIRTUAL_INVOKE_METHOD:
@@ -228,7 +228,7 @@ public class InvokeGcDisabledTest extends TestScaffold {
             forceDebuggeeGC();
             verifyCollected(obj);
         }
-        
+
         println("TEST: Verify INVOKE_DISABLE_COLLECTION disables collection of allocated object");
         obj = invoke(method, invokeType, ObjectReference.INVOKE_DISABLE_COLLECTION, throwsException);
         forceDebuggeeGC();
@@ -250,7 +250,7 @@ public class InvokeGcDisabledTest extends TestScaffold {
 
     protected void runTests() throws Exception {
         ObjectReference obj;
-        
+
         enableWhiteBoxAPI(); // Allow debuggee to use WhiteBoxAPI
 
         BreakpointEvent bpe = startTo("InvokeGcDisabledTarg", "sayHi", "()V");
@@ -279,7 +279,7 @@ public class InvokeGcDisabledTest extends TestScaffold {
          * need to test each of the above 3 APIs with an exception thrown to make
          * sure the INVOKE_DISABLE_COLLECTION flag also works on the exception object.
          */
-        
+
         testInvoke("ObjectReference.invokeMethod()",
                    "newObject", "()Ljava/lang/Object;",
                    InvokeType. VIRTUAL_INVOKE_METHOD, false, stressMode);
