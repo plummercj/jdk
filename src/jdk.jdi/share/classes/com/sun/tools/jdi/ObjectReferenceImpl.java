@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -424,11 +424,31 @@ public class ObjectReferenceImpl extends ValueImpl
             vm.notifySuspend();
         }
 
+        /*
+         * If there is a returned Object or an exception Object, make sure GC
+         * is disabled if requested.
+         */
+        if ((options & INVOKE_DISABLE_COLLECTION) != 0) {
+            // Account for implicit disableCollection() done by the debug agent.
+            if (ret.exception != null) {
+                ret.exception.incrementGcDisableCount();
+            } else {
+                if (ret.returnValue instanceof ObjectReferenceImpl obj) {
+                    obj.incrementGcDisableCount();
+                }
+            }
+        }
+
         if (ret.exception != null) {
             throw new InvocationException(ret.exception);
         } else {
             return ret.returnValue;
         }
+    }
+
+    /* leave synchronized to keep count accurate */
+    synchronized void incrementGcDisableCount() {
+        gcDisableCount++;
     }
 
     /* leave synchronized to keep count accurate */

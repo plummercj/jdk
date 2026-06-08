@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3353,4 +3353,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "otherwise, all threads started. ")
     (Constant INVOKE_NONVIRTUAL = 0x02
         "otherwise, normal virtual invoke (instance methods only)")
+    (Constant INVOKE_DISABLE_COllECTION = 0x04
+        "otherwise, the instance returned (if any) and exception thrown (if any) "
+        "may be collected")
 )

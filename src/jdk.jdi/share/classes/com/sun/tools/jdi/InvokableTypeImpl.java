@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import com.sun.jdi.InterfaceType;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
 import com.sun.jdi.Method;
+import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMCannotBeModifiedException;
@@ -124,6 +125,22 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
         if ((options & ClassType.INVOKE_SINGLE_THREADED) == 0) {
             vm.notifySuspend();
         }
+
+        /*
+         * If there is a returned Object or an exception Object, make sure GC
+         * is disabled if requested.
+         */
+        if ((options & ClassType.INVOKE_DISABLE_COLLECTION) != 0) {
+            // Account for implicit disableCollection() done by the debug agent.
+            if (ret.getException() != null) {
+                ret.getException().incrementGcDisableCount();
+            } else {
+                if (ret.getResult() instanceof ObjectReferenceImpl obj) {
+                    obj.incrementGcDisableCount();
+                }
+            }
+        }
+
         if (ret.getException() != null) {
             throw new InvocationException(ret.getException());
         } else {
