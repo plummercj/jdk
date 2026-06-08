@@ -222,7 +222,7 @@ public class InvokeGcDisabledTest extends TestScaffold {
             obj.disableCollection();
             forceDebuggeeGC();
             verifyNotCollected(obj);
-            
+
             println("TEST: Verify enableCollection allows allocated object to be collected");
             obj.enableCollection();
             forceDebuggeeGC();
