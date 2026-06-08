@@ -125,7 +125,7 @@ public interface ClassType extends ReferenceType {
 
     /** Perform method invocation with only the invoking thread resumed */
     static final int INVOKE_SINGLE_THREADED = 0x1;
-    /** Perform perform the equivalent of ObjectReference.disableCollection() on
+    /** Perform the equivalent of ObjectReference.disableCollection() on
         any ObjectReference returned, including any exception thrown. */
     static final int INVOKE_DISABLE_COLLECTION = 0x4;
 

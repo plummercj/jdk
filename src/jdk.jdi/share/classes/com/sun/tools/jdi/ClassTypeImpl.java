@@ -235,12 +235,8 @@ public final class ClassTypeImpl extends InvokableTypeImpl
             vm.notifySuspend();
         }
 
-        /*
-         * If there is a returned Object or an exception Object, make sure GC
-         * is disabled if requested.
-         */
         if ((options & INVOKE_DISABLE_COLLECTION) != 0) {
-            // Account for implicit disableCollection() done by the debug agent.
+            // Account for implicit disableCollection() done by JDWP.
             if (ret.exception != null) {
                 ret.exception.incrementGcDisableCount();
             } else {
