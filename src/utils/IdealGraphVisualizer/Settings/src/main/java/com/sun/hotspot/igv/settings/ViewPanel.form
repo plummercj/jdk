@@ -28,7 +28,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="15" max="32767" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -39,24 +39,25 @@
       <Layout>
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" attributes="0">
+              <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace type="separate" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="85" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                      <Component id="nodeShortTextField" max="32767" attributes="0"/>
-                      <Component id="jScrollPane1" pref="663" max="32767" attributes="0"/>
-                      <Component id="portSpinner" alignment="0" max="32767" attributes="0"/>
                       <Component id="defaultViewComboBox" alignment="0" max="32767" attributes="0"/>
                       <Component id="graphNameSuffixField" alignment="0" max="32767" attributes="0"/>
                       <Component id="nodeTinyTextField" alignment="0" max="32767" attributes="0"/>
+                      <Component id="nodeShortTextField" alignment="0" max="32767" attributes="0"/>
+                      <Component id="jScrollPane1" alignment="0" pref="529" max="32767" attributes="0"/>
+                      <Component id="acceptExternalConnectionsCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="portSpinner" max="32767" attributes="0"/>
                   </Group>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>
@@ -70,31 +71,33 @@
                       <Component id="jScrollPane1" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="nodeShortTextField" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel4" min="-2" pref="18" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="nodeShortTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel4" alignment="3" min="-2" pref="18" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="27" max="32767" attributes="0"/>
+                  <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="jLabel5" alignment="3" min="-2" pref="24" max="-2" attributes="0"/>
                       <Component id="nodeTinyTextField" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="graphNameSuffixField" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel6" min="-2" pref="18" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" max="32767" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="graphNameSuffixField" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel6" alignment="3" min="-2" pref="18" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="defaultViewComboBox" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel2" min="-2" pref="18" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="defaultViewComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel2" alignment="3" min="-2" pref="18" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="portSpinner" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel3" min="-2" pref="18" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="portSpinner" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel3" alignment="3" min="-2" pref="18" max="-2" attributes="0"/>
                   </Group>
+                  <EmptySpace type="separate" min="-2" max="-2" attributes="0"/>
+                  <Component id="acceptExternalConnectionsCheckBox" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
@@ -110,8 +113,6 @@
           <Properties>
             <Property name="text" type="java.lang.String" value="Default View"/>
           </Properties>
-        </Component>
-        <Component class="javax.swing.JSpinner" name="portSpinner">
         </Component>
         <Container class="javax.swing.JScrollPane" name="jScrollPane1">
           <AuxValues>
@@ -129,11 +130,6 @@
             </Component>
           </SubComponents>
         </Container>
-        <Component class="javax.swing.JLabel" name="jLabel3">
-          <Properties>
-            <Property name="text" type="java.lang.String" value="Network Port"/>
-          </Properties>
-        </Component>
         <Component class="javax.swing.JLabel" name="jLabel4">
           <Properties>
             <Property name="text" type="java.lang.String" value="Short Node Text"/>
@@ -186,6 +182,22 @@
         <Component class="javax.swing.JLabel" name="jLabel6">
           <Properties>
             <Property name="text" type="java.lang.String" value="Graph Name Suffix"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JSpinner" name="portSpinner">
+          <Properties>
+            <Property name="toolTipText" type="java.lang.String" value="IGV listening port to receive graphs over the network (example: 4444)."/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel3">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Network Port"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="acceptExternalConnectionsCheckBox">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Accept External Connections"/>
+            <Property name="toolTipText" type="java.lang.String" value="Listen on all network interfaces (wildcard address) instead of only 127.0.0.1. Use with caution!"/>
           </Properties>
         </Component>
       </SubComponents>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.nio.channels.Channels;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.ArrayList;
@@ -37,6 +38,8 @@ import java.util.HashSet;
 import org.junit.*;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  *
@@ -84,6 +87,18 @@ public class ParserTest {
     private void testBoth(GraphDocument document, String xmlString) {
         test(document);
         test(document, xmlString);
+    }
+
+    /**
+     * Parse the provided XML and catch and return an expected IOException.
+     */
+    private IOException testExceptionThrowing(String xmlString) {
+        InputStream in = new ByteArrayInputStream(xmlString.getBytes(UTF_8));
+        Parser parser = new Parser(Channels.newChannel(in), null, null, null);
+        parser.setInvokeLater(false);
+        // The parser should throw a SAXParseException (wrapped in an IOException).
+        IOException ex = assertThrows(IOException.class, () -> { parser.parse(); });
+        return ex;
     }
 
     /**
@@ -225,6 +240,41 @@ public class ParserTest {
     public void testParseIncompleteXML() {
         // Exception should be swallowed, see catch clause in GraphParser.parse.
         testBoth(new GraphDocument(), "<graphDocument>");
+    }
+
+    /**
+     * Test that parsing XML files with internal DTDs fails.
+     */
+    @Test
+    public void testParseInternalDTD() {
+        String xmlString =
+            String.join(System.lineSeparator(),
+                        "<!DOCTYPE graphDocument [",
+                        "<!ELEMENT graphDocument (group)>",
+                        "]>",
+                        "<graphDocument></graphDocument>");
+        // The parser should throw a SAXParseException (wrapped in an IOException).
+        IOException ex = testExceptionThrowing(xmlString);
+        Assert.assertTrue(ex.getMessage().startsWith("org.xml.sax.SAXParseException"));
+    }
+
+    /**
+     * Test that parsing XML files that require accessing external DTDs fails.
+     */
+    @Test
+    public void testParseExternalDTD() {
+        String xmlString =
+            String.join(System.lineSeparator(),
+                        "<!DOCTYPE graphDocument [",
+                        "<!ENTITY % external SYSTEM \"http://127.0.0.1:1234/external.dtd\">",
+                        "%external;",
+                        "]>",
+                        "<graphDocument></graphDocument>");
+        // The parser should throw a SAXParseException (wrapped in an
+        // IOException) rather than trying to connect to the specified endpoint.
+        IOException ex = testExceptionThrowing(xmlString);
+        Assert.assertNotEquals(ConnectException.class, ex.getClass());
+        Assert.assertTrue(ex.getMessage().startsWith("org.xml.sax.SAXParseException"));
     }
 
 }

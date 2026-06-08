@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,22 @@ public class Settings {
         public static final int INTERACTIVE_FREE_NODES = 4;
     }
 
-    public static final String NODE_TEXT = "nodeText";
-    public static final String NODE_TEXT_DEFAULT = "[idx] [name]";
-    public static final String NODE_SHORT_TEXT = "nodeShortText";
-    public static final String NODE_SHORT_TEXT_DEFAULT = "[idx] [name]";
-    public static final String NODE_TINY_TEXT = "nodeTinyText";
-    public static final String NODE_TINY_TEXT_DEFAULT = "[idx]";
-    public static final String GRAPH_NAME_SUFFIX = "graphNameSuffix";
-    public static final String GRAPH_NAME_SUFFIX_DEFAULT = "(map: [map], block #[block] at [method])";
-    public static final String DEFAULT_VIEW = "defaultView";
-    public static final int    DEFAULT_VIEW_DEFAULT = DefaultView.SEA_OF_NODES;
-    public static final String PORT = "port";
-    public static final String PORT_DEFAULT = "4444";
-    public static final String DIRECTORY = "directory";
-    public static final String DIRECTORY_DEFAULT = System.getProperty("user.dir");
+    public static final String  NODE_TEXT = "nodeText";
+    public static final String  NODE_TEXT_DEFAULT = "[idx] [name]";
+    public static final String  NODE_SHORT_TEXT = "nodeShortText";
+    public static final String  NODE_SHORT_TEXT_DEFAULT = "[idx] [name]";
+    public static final String  NODE_TINY_TEXT = "nodeTinyText";
+    public static final String  NODE_TINY_TEXT_DEFAULT = "[idx]";
+    public static final String  GRAPH_NAME_SUFFIX = "graphNameSuffix";
+    public static final String  GRAPH_NAME_SUFFIX_DEFAULT = "(map: [map], block #[block] at [method])";
+    public static final String  DEFAULT_VIEW = "defaultView";
+    public static final int     DEFAULT_VIEW_DEFAULT = DefaultView.SEA_OF_NODES;
+    public static final String  PORT = "port";
+    public static final String  PORT_DEFAULT = "4444";
+    public static final String  ACCEPT_EXTERNAL_CONNECTIONS = "acceptExternalConnections";
+    public static final boolean ACCEPT_EXTERNAL_CONNECTIONS_DEFAULT = false;
+    public static final String  DIRECTORY = "directory";
+    public static final String  DIRECTORY_DEFAULT = System.getProperty("user.dir");
 
     public static Preferences get() {
         return Preferences.userNodeForPackage(Settings.class);

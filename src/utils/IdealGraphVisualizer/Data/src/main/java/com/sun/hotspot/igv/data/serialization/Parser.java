@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,13 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.SwingUtilities;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
@@ -592,8 +595,6 @@ public class Parser implements GraphParser {
         }
         try {
             XMLReader reader = createReader();
-            // To enforce using English for non-English users, we must use Locale.ROOT rather than Locale.ENGLISH
-            reader.setProperty("http://apache.org/xml/properties/locale", Locale.ROOT);
             reader.setContentHandler(new XMLParser(xmlData, monitor));
             reader.parse(new InputSource(Channels.newInputStream(channel)));
         } catch (SAXException ex) {
@@ -616,10 +617,48 @@ public class Parser implements GraphParser {
 
     private XMLReader createReader() throws SAXException {
         try {
-            SAXParserFactory pFactory = SAXParserFactory.newInstance();
+            SAXParserFactory pFactory = SAXParserFactory.newDefaultInstance();
             pFactory.setValidating(false);
-            pFactory.setNamespaceAware(true);
-            return pFactory.newSAXParser().getXMLReader();
+            pFactory.setNamespaceAware(false);
+            pFactory.setXIncludeAware(false);
+            // Enable FSP explicitly to set secure-processing defaults.
+            pFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            // There is no need for any of these features.
+            pFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            pFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            pFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            pFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+            XMLReader reader = pFactory.newSAXParser().getXMLReader();
+            // To enforce using English for non-English users, we must use
+            // Locale.ROOT rather than Locale.ENGLISH.
+            reader.setProperty("http://apache.org/xml/properties/locale", Locale.ROOT);
+            // Disable external resource access explicitly. Otherwise, it could
+            // be enabled e.g. via a JAXP configuration file, which takes
+            // precedence over the secure-processing defaults established by
+            // enabling FSP explicitly above.
+            reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            reader.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            try {
+                reader.setProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            } catch (SAXNotRecognizedException ex) {
+                // ACCESS_EXTERNAL_STYLESHEET is not recognized by SAX parsers
+                // before JDK 25. Accept it being ignored for JDK < 25 but
+                // expect it to be recognized otherwise. For consistency with
+                // the other external access properties, it should be cleared
+                // unconditionally when support for JDK < 25 is dropped.
+                if (Runtime.version().feature() >= 25) {
+                    throw ex;
+                }
+            }
+            // At this point, we do not expect to find any external entity occurrence.
+            reader.setEntityResolver(
+                new EntityResolver() {
+                    @Override
+                    public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
+                        throw new SAXException("Unexpected entity: " + publicId + ", " + systemId);
+                    }});
+            return reader;
         } catch (ParserConfigurationException ex) {
             throw new SAXException(ex);
         }

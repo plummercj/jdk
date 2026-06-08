@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@ public class Server implements PreferenceChangeListener {
     private ServerSocketChannel serverSocket;
     private final GraphDocument graphDocument;
     private final GraphContextAction contextAction;
+    private static final String LOCAL_HOST_NAME = "127.0.0.1";
     private int port;
+    private boolean acceptExternalConnections;
 
     private volatile boolean isServerRunning;
 
@@ -51,14 +53,19 @@ public class Server implements PreferenceChangeListener {
         this.graphDocument = graphDocument;
         this.contextAction = contextAction;
         port = Integer.parseInt(Settings.get().get(Settings.PORT, Settings.PORT_DEFAULT));
+        acceptExternalConnections =
+            Settings.get().getBoolean(Settings.ACCEPT_EXTERNAL_CONNECTIONS, Settings.ACCEPT_EXTERNAL_CONNECTIONS_DEFAULT);
         Settings.get().addPreferenceChangeListener(this);
     }
 
     @Override
     public void preferenceChange(PreferenceChangeEvent e) {
         int curPort = Integer.parseInt(Settings.get().get(Settings.PORT, Settings.PORT_DEFAULT));
-        if (curPort != port) {
+        boolean curAcceptExternalConnections =
+            Settings.get().getBoolean(Settings.ACCEPT_EXTERNAL_CONNECTIONS, Settings.ACCEPT_EXTERNAL_CONNECTIONS_DEFAULT);
+        if (curAcceptExternalConnections != acceptExternalConnections || curPort != port) {
             port = curPort;
+            acceptExternalConnections = curAcceptExternalConnections;
             shutdownServer();
             startServer();
         }
@@ -69,7 +76,12 @@ public class Server implements PreferenceChangeListener {
 
         try {
             serverSocket = ServerSocketChannel.open();
-            serverSocket.bind(new InetSocketAddress(port));
+            if (acceptExternalConnections) {
+                serverSocket.bind(new InetSocketAddress(port));
+            } else {
+                // Default configuration, unless changed by the user in the Options window.
+                serverSocket.bind(new InetSocketAddress(LOCAL_HOST_NAME, port));
+            }
         } catch (IOException ex) {
             ex.printStackTrace();
             return;

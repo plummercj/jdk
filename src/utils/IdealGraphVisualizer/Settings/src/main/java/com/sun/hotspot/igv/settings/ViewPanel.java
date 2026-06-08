@@ -47,10 +47,8 @@ final class ViewPanel extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        portSpinner = new javax.swing.JSpinner();
         jScrollPane1 = new javax.swing.JScrollPane();
         nodeTextArea = new javax.swing.JTextArea();
-        jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         nodeShortTextField = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
@@ -58,6 +56,9 @@ final class ViewPanel extends javax.swing.JPanel {
         defaultViewComboBox = new javax.swing.JComboBox<>();
         graphNameSuffixField = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
+        portSpinner = new javax.swing.JSpinner();
+        jLabel3 = new javax.swing.JLabel();
+        acceptExternalConnectionsCheckBox = new javax.swing.JCheckBox();
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel1, "Node Text");
 
@@ -67,8 +68,6 @@ final class ViewPanel extends javax.swing.JPanel {
         nodeTextArea.setRows(5);
         nodeTextArea.setToolTipText("Multi-line format string for node labels. Properties are specified with brackets  (example: \"[idx] [name]\").");
         jScrollPane1.setViewportView(nodeTextArea);
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, "Network Port");
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel4, "Short Node Text");
 
@@ -85,6 +84,13 @@ final class ViewPanel extends javax.swing.JPanel {
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel6, "Graph Name Suffix");
 
+        portSpinner.setToolTipText("IGV listening port to receive graphs over the network (example: 4444).");
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, "Network Port");
+
+        org.openide.awt.Mnemonics.setLocalizedText(acceptExternalConnectionsCheckBox, "Accept External Connections");
+        acceptExternalConnectionsCheckBox.setToolTipText("Listen on all network interfaces (wildcard address) instead of only 127.0.0.1. Use with caution!");
+
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -93,19 +99,20 @@ final class ViewPanel extends javax.swing.JPanel {
                 .addContainerGap()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jLabel1)
-                    .add(jLabel3)
                     .add(jLabel2)
                     .add(jLabel4)
                     .add(jLabel5)
-                    .add(jLabel6))
-                .add(18, 18, 18)
+                    .add(jLabel6)
+                    .add(jLabel3))
+                .add(85, 85, 85)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(nodeShortTextField)
-                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 663, Short.MAX_VALUE)
-                    .add(portSpinner)
                     .add(defaultViewComboBox, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(graphNameSuffixField)
-                    .add(nodeTinyTextField))
+                    .add(nodeTinyTextField)
+                    .add(nodeShortTextField)
+                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 529, Short.MAX_VALUE)
+                    .add(acceptExternalConnectionsCheckBox)
+                    .add(portSpinner))
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
@@ -115,26 +122,28 @@ final class ViewPanel extends javax.swing.JPanel {
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jLabel1))
-                .add(27, 27, 27)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                .add(18, 18, 18)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(nodeShortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 27, Short.MAX_VALUE)
+                .add(18, 18, 18)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(nodeTinyTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(27, 27, 27)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                .add(18, 18, Short.MAX_VALUE)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(graphNameSuffixField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jLabel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(27, 27, 27)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                .add(18, 18, 18)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(defaultViewComboBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(27, 27, 27)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                .add(18, 18, 18)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(portSpinner, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(18, 18, 18)
+                .add(acceptExternalConnectionsCheckBox)
                 .addContainerGap())
         );
 
@@ -152,7 +161,7 @@ final class ViewPanel extends javax.swing.JPanel {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(15, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     void load() {
@@ -161,6 +170,7 @@ final class ViewPanel extends javax.swing.JPanel {
         nodeTinyTextField.setText(Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
         graphNameSuffixField.setText(Settings.get().get(Settings.GRAPH_NAME_SUFFIX, Settings.GRAPH_NAME_SUFFIX_DEFAULT));
         defaultViewComboBox.setSelectedIndex(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DefaultView.SEA_OF_NODES));
+        acceptExternalConnectionsCheckBox.setSelected(Settings.get().getBoolean(Settings.ACCEPT_EXTERNAL_CONNECTIONS, Settings.ACCEPT_EXTERNAL_CONNECTIONS_DEFAULT));
         portSpinner.setValue(Integer.parseInt(Settings.get().get(Settings.PORT, Settings.PORT_DEFAULT)));
     }
 
@@ -170,6 +180,7 @@ final class ViewPanel extends javax.swing.JPanel {
         Settings.get().put(Settings.NODE_TINY_TEXT, nodeTinyTextField.getText());
         Settings.get().put(Settings.GRAPH_NAME_SUFFIX, graphNameSuffixField.getText());
         Settings.get().putInt(Settings.DEFAULT_VIEW, defaultViewComboBox.getSelectedIndex());
+        Settings.get().putBoolean(Settings.ACCEPT_EXTERNAL_CONNECTIONS, acceptExternalConnectionsCheckBox.isSelected());
         Settings.get().put(Settings.PORT, portSpinner.getValue().toString());
     }
 
@@ -177,6 +188,7 @@ final class ViewPanel extends javax.swing.JPanel {
         return true;
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox acceptExternalConnectionsCheckBox;
     private javax.swing.JComboBox<String> defaultViewComboBox;
     private javax.swing.JTextField graphNameSuffixField;
     private javax.swing.JLabel jLabel1;

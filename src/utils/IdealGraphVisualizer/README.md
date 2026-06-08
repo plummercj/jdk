@@ -39,7 +39,9 @@ Ideal graphs are dumped at the following points:
 By default the JVM expects that it will connect to a visualizer on the local
 host on port 4444. This can be configured using the options
 `-XX:PrintIdealGraphAddress=` and `-XX:PrintIdealGraphPort=`.
-`PrintIdealGraphAddress` can actually be a hostname.
+`PrintIdealGraphAddress` can actually be a host name. IGV is configured by
+default to only accept local connections, but this restriction can be relaxed in
+the Options window.
 
 It is advisable to run the JVM with background compilation disabled (-Xbatch).
 Compilations going on in the background may be cancelled when the VM terminates,
