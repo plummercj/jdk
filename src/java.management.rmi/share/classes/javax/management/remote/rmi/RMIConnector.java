@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
@@ -1812,6 +1813,22 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         return (RMIServer) objref;
     }
 
+    private static final String DEFAULT_URL_FILTER_PATTERN = "javax.management.remote.rmi.*;" +
+        "java.rmi.server.*;" +
+        "sun.rmi.server.*;" +
+        "sun.rmi.transport.LiveRef;" +
+        "java.lang.String;" +
+        "java.lang.Number;" +
+        "sun.rmi.transport.tcp.TCPEndpoint;" +
+        "javax.rmi.ssl.*;" +
+        "java.lang.reflect.Proxy;" +
+        "jdk.proxy.*;" +
+        "jdk.proxy2.*;";
+
+    private static final String DEFAULT_URL_FILTER_PATTERN_TAIL = "!*";
+
+    private static final String URL_FILTER_OVERRIDE_PATTERN = "jmx.remote.rmi.RMIConnector.urlFilter";
+
     private RMIServer findRMIServerJRMP(String base64, Map<String, ?> env)
         throws IOException {
         final byte[] serialized;
@@ -1828,13 +1845,36 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 (loader == null) ?
                     new ObjectInputStream(bin) :
                     new ObjectInputStreamWithLoader(bin, loader);
+
+        // Build serialization filter.  Default may be overridden by env, or System Property.
+        // If overridden, must specify entire filter including any socket factory classes.
+        String filterPattern = (String) env.get(URL_FILTER_OVERRIDE_PATTERN);
+        if (filterPattern == null) {
+            filterPattern = System.getProperty(URL_FILTER_OVERRIDE_PATTERN);
+        }
+        if (filterPattern == null) {
+            // env may contain socket factories which the filter does not, so expand default filter.
+            filterPattern = DEFAULT_URL_FILTER_PATTERN;
+            Object csf = (Object) env.get(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE);
+            if (csf != null) {
+               filterPattern = filterPattern + csf.getClass().getName() + ";";
+            }
+            Object ssf = (Object) env.get(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE);
+            if (ssf != null) {
+               filterPattern = filterPattern + ssf.getClass().getName() + ";";
+            }
+            filterPattern += DEFAULT_URL_FILTER_PATTERN_TAIL;
+        }
+        ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(filterPattern);
+        oin.setObjectInputFilter(filter);
+
         final Object stub;
         try {
             stub = oin.readObject();
         } catch (ClassNotFoundException e) {
             throw new MalformedURLException("Class not found: " + e);
         }
-        return (RMIServer)stub;
+        return (RMIServer) stub;
     }
 
     private static final class ObjectInputStreamWithLoader

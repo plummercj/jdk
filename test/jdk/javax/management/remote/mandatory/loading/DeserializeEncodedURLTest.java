@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,23 @@
 
 /*
  * @test
- * @bug 4924683
+ * @bug 4924683 8385271
  * @summary Check RMI/JRMP stubs can be deserialized using user's loader
  * @author Eamonn McManus
  *
  * @run clean DeserializeEncodedURLTest SingleClassLoader
  * @run build DeserializeEncodedURLTest SingleClassLoader
- * @run main DeserializeEncodedURLTest
+ * @run main/othervm DeserializeEncodedURLTest
+ */
+
+/*
+ * @test
+ * @bug 4924683 8385271
+ * @summary Alternate run using System Property to set JMXServiceURL filter
+ *
+ * @run clean DeserializeEncodedURLTest SingleClassLoader
+ * @run build DeserializeEncodedURLTest SingleClassLoader
+ * @run main/othervm -Djmx.remote.rmi.RMIConnector.urlFilter="DeserializeEncodedURLTest$MutantRMIServerStub;SubMutantRMIServerStub;!*" DeserializeEncodedURLTest
  */
 
 import java.io.*;
@@ -103,6 +113,14 @@ public class DeserializeEncodedURLTest {
 
         Map env = new HashMap();
         env.put(JMXConnectorFactory.DEFAULT_CLASS_LOADER, mutantLoader);
+
+        // JMXServiceURL will be filtered, we are using a non-standard Object, so set filter:
+        if (System.getProperty("jmx.remote.rmi.RMIConnector.urlFilter") == null) {
+            System.out.println("Setting JMXServiceURL filter in env.");
+            env.put("jmx.remote.rmi.RMIConnector.urlFilter", "DeserializeEncodedURLTest$MutantRMIServerStub;SubMutantRMIServerStub;!*");
+        } else {
+            System.out.println("Using JMXServiceURL filter in System Property.");
+        }
         JMXConnector conn = JMXConnectorFactory.newJMXConnector(address, env);
 
         System.out.println("Client successfully created with this address");
