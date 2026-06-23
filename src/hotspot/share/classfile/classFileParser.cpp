@@ -2449,20 +2449,21 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
         return nullptr;
       }
       method_parameters_seen = true;
-      method_parameters_length = cfs->get_u1_fast();
-      const u4 real_length = (method_parameters_length * 4u) + 1u;
-      if (method_attribute_length != real_length) {
-        classfile_parse_error(
-          "Invalid MethodParameters method attribute length %u in class file",
-          method_attribute_length, THREAD);
-        return nullptr;
+      if (method_attribute_length > 0) { // Ensure something to read: 0 is legal
+        method_parameters_length = cfs->get_u1(CHECK_NULL);
+        const u4 real_length = (method_parameters_length * 4u) + 1u;
+        if (method_attribute_length != real_length) {
+          classfile_parse_error(
+            "Invalid MethodParameters method attribute length %u in class file)",
+            method_attribute_length, THREAD);
+          return nullptr;
+        }
+        method_parameters_data = cfs->current();
+        cfs->skip_u1(method_parameters_length * 4u, CHECK_NULL);
+        // ignore this attribute if it cannot be reflected
+        if (!vmClasses::reflect_Parameter_klass_is_loaded())
+          method_parameters_length = -1;
       }
-      method_parameters_data = cfs->current();
-      cfs->skip_u2_fast(method_parameters_length);
-      cfs->skip_u2_fast(method_parameters_length);
-      // ignore this attribute if it cannot be reflected
-      if (!vmClasses::reflect_Parameter_klass_is_loaded())
-        method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
         classfile_parse_error(
@@ -2854,25 +2855,26 @@ void ClassFileParser::parse_classfile_sourcefile_attribute(const ClassFileStream
 }
 
 void ClassFileParser::parse_classfile_source_debug_extension_attribute(const ClassFileStream* const cfs,
-                                                                       int length,
+                                                                       u4 length,
                                                                        TRAPS) {
   assert(cfs != nullptr, "invariant");
-
   const u1* const sde_buffer = cfs->current();
   assert(sde_buffer != nullptr, "null sde buffer");
-
   // Don't bother storing it if there is no way to retrieve it
   if (JvmtiExport::can_get_source_debug_extension()) {
-    assert((length+1) > length, "Overflow checking");
-    u1* const sde = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, u1, length+1);
-    for (int i = 0; i < length; i++) {
+    cfs->guarantee_more(length, CHECK);
+    // On 32-bit systems size_t(length)+1 overflows size_t, but guarantee_more throws CFE before we get here.
+    u1* const sde = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, u1, (size_t(length) + 1));
+    for (u4 i = 0; i < length; i++) {
       sde[i] = sde_buffer[i];
     }
     sde[length] = '\0';
     set_class_sde_buffer((const char*)sde, length);
+    cfs->skip_u1_fast(length);
+  } else {
+    // Got utf8 string, set stream position forward
+    cfs->skip_u1(length, CHECK);
   }
-  // Got utf8 string, set stream position forward
-  cfs->skip_u1(length, CHECK);
 }
 
 
@@ -3447,7 +3449,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
         return;
       }
       parsed_source_debug_ext_annotations_exist = true;
-      parse_classfile_source_debug_extension_attribute(cfs, (int)attribute_length, CHECK);
+      parse_classfile_source_debug_extension_attribute(cfs, attribute_length, CHECK);
     } else if (tag == vmSymbols::tag_inner_classes()) {
       // Check for InnerClasses tag
       if (parsed_innerclasses_attribute) {

@@ -680,7 +680,7 @@ public:
 
   // source debug extension
   const char* source_debug_extension() const { return _source_debug_extension; }
-  void set_source_debug_extension(const char* array, int length);
+  void set_source_debug_extension(const char* array, u4 length);
 
   // nonstatic oop-map blocks
   static int nonstatic_oop_map_size(unsigned int oop_map_count) {

@@ -173,7 +173,7 @@ class ClassFileParser {
 
   // class attributes parsed before the instance klass is created:
   bool _synthetic_flag;
-  int _sde_length;
+  u4 _sde_length;
   const char* _sde_buffer;
   u2 _sourcefile_index;
   u2 _generic_signature_index;
@@ -217,7 +217,7 @@ class ClassFileParser {
   void set_class_synthetic_flag(bool x)        { _synthetic_flag = x; }
   void set_class_sourcefile_index(u2 x)        { _sourcefile_index = x; }
   void set_class_generic_signature_index(u2 x) { _generic_signature_index = x; }
-  void set_class_sde_buffer(const char* x, int len)  { _sde_buffer = x; _sde_length = len; }
+  void set_class_sde_buffer(const char* x, u4 len) { _sde_buffer = x; _sde_length = len; }
 
   void create_combined_annotations(TRAPS);
   void apply_parsed_class_attributes(InstanceKlass* k);  // update k
@@ -306,7 +306,7 @@ class ClassFileParser {
   u2 parse_generic_signature_attribute(const ClassFileStream* const cfs, TRAPS);
   void parse_classfile_sourcefile_attribute(const ClassFileStream* const cfs, TRAPS);
   void parse_classfile_source_debug_extension_attribute(const ClassFileStream* const cfs,
-                                                        int length,
+                                                        u4 length,
                                                         TRAPS);
 
   // Check for circularity in InnerClasses attribute.

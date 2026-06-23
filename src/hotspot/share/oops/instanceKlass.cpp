@@ -3048,17 +3048,14 @@ const InstanceKlass* InstanceKlass::get_klass_version(int version) const {
   return nullptr;
 }
 
-void InstanceKlass::set_source_debug_extension(const char* array, int length) {
+void InstanceKlass::set_source_debug_extension(const char* array, u4 length) {
   if (array == nullptr) {
     _source_debug_extension = nullptr;
   } else {
-    // Adding one to the attribute length in order to store a null terminator
-    // character could cause an overflow because the attribute length is
-    // already coded with an u4 in the classfile, but in practice, it's
-    // unlikely to happen.
-    assert((length+1) > length, "Overflow checking");
-    char* sde = NEW_C_HEAP_ARRAY(char, (length + 1), mtClass);
-    for (int i = 0; i < length; i++) {
+    // Overflow is only a theoretical possibility on 32-bit, and
+    // would have been caught by the ClassFileParser.
+    char* sde = NEW_C_HEAP_ARRAY(char, (size_t(length) + 1), mtClass);
+    for (u4 i = 0; i < length; i++) {
       sde[i] = array[i];
     }
     sde[length] = '\0';

@@ -4366,7 +4366,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->set_source_debug_extension(
     scratch_class->source_debug_extension(),
     scratch_class->source_debug_extension() == nullptr ? 0 :
-    (int)strlen(scratch_class->source_debug_extension()));
+    (u4)strlen(scratch_class->source_debug_extension()));
 
   // Use of javac -g could be different in the old and the new
   if (scratch_class->has_localvariable_table() !=
