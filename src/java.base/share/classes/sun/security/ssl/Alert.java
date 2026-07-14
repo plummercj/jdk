@@ -226,7 +226,11 @@ public enum Alert {
     }
 
     /**
-     * Consumer of alert messages
+     * Consumer of alert messages.
+     * <p>
+     * Note that alert level is ignored for TLSv1.3 as per RFC 8446 Section 6:
+     * In TLS 1.3, the severity is implicit in the type of
+     * alert being sent, and the "level" field can safely be ignored.
      */
     private static final class AlertConsumer implements SSLConsumer {
         // Prevent instantiation of this class.
@@ -257,13 +261,19 @@ public enum Alert {
                             "Received close_notify during handshake");
                 }
             } else if (alert == Alert.USER_CANCELED) {
-                if (level == Level.WARNING) {
+                if (level == Level.WARNING || isTLS13Plus(tc)) {
+                    // Don't count 1st user_canceled towards no-progress records
+                    if (tc.peerUserCanceled) {
+                        tc.registerNoProgressRecord();
+                    }
                     tc.peerUserCanceled = true;
                 } else {
                     throw tc.fatal(alert,
                             "Received fatal close_notify alert", true, null);
                 }
-            } else if ((level == Level.WARNING) && (alert != null)) {
+            } else if ((level == Level.WARNING) && (alert != null)
+                    && !isTLS13Plus(tc)) {
+                tc.registerNoProgressRecord();
                 // Terminate the connection if an alert with a level of warning
                 // is received during handshaking, except the no_certificate
                 // warning for SSLv3.
@@ -301,7 +311,7 @@ public enum Alert {
                             "Received handshake warning: " + alert.description);
                     }
                 }  // Otherwise, ignore the warning
-            } else {    // fatal or unknown
+            } else {    // fatal, unknown or TLSv1.3
                 String diagnostic;
                 if (alert == null) {
                     alert = Alert.UNEXPECTED_MESSAGE;
@@ -312,6 +322,17 @@ public enum Alert {
 
                 throw tc.fatal(alert, diagnostic, true, null);
             }
+        }
+
+        private static boolean isTLS13Plus(TransportContext tc) {
+            HandshakeContext hc = tc.handshakeContext;
+            ProtocolVersion pv = hc == null ? null : hc.negotiatedProtocol;
+
+            if (pv == null && tc.isNegotiated) {
+                pv = tc.protocolVersion;
+            }
+
+            return pv != null && pv.useTLS13PlusSpec();
         }
     }
 }

@@ -96,6 +96,11 @@ final class TransportContext implements ConnectionContext {
     CipherSuite cipherSuite;
     private static final byte[] emptyByteArray = new byte[0];
 
+    // Limit and counter for records not making useful connection progress,
+    // i.e. ignored warning alerts and empty application-data records.
+    private static final int MAX_NO_PROGRESS_RECORDS = 32;
+    private int noProgressRecordCounter = 0;
+
     // Please never use the transport parameter other than storing a
     // reference to this object.
     //
@@ -196,6 +201,7 @@ final class TransportContext implements ConnectionContext {
                     }
                 }
                 handshakeContext.dispatch(type, plaintext);
+                registerInboundProgress();
                 break;
             case ALERT:
                 Alert.alertConsumer.consume(this, plaintext.fragment);
@@ -208,6 +214,17 @@ final class TransportContext implements ConnectionContext {
                     throw fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unexpected content: " + plaintext.contentType);
                 }
+        }
+    }
+
+    void registerInboundProgress() {
+        noProgressRecordCounter = 0;
+    }
+
+    void registerNoProgressRecord() throws SSLException {
+        if (++noProgressRecordCounter > MAX_NO_PROGRESS_RECORDS) {
+            throw fatal(Alert.UNEXPECTED_MESSAGE,
+                    "Too many records not making connection progress");
         }
     }
 

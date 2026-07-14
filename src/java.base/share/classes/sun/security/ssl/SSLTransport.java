@@ -192,30 +192,37 @@ interface SSLTransport {
                         "Receiving application data before handshake complete");
                 }
 
-                // Fill the destination buffers.
-                if ((dsts != null) && (dstsLength > 0)) {
-                    ByteBuffer fragment = plainText.fragment;
-                    int remains = fragment.remaining();
+                ByteBuffer fragment = plainText.fragment;
+                int remains = fragment.remaining();
 
-                    // Should have enough room in the destination buffers.
-                    int limit = dstsOffset + dstsLength;
-                    for (int i = dstsOffset;
-                            ((i < limit) && (remains > 0)); i++) {
+                if (remains > 0) {
+                    context.registerInboundProgress();
 
-                        int amount = Math.min(dsts[i].remaining(), remains);
-                        fragment.limit(fragment.position() + amount);
-                        dsts[i].put(fragment);
-                        remains -= amount;
+                    // Fill the destination buffers.
+                    if ((dsts != null) && (dstsLength > 0)) {
 
-                        if (!dsts[i].hasRemaining()) {
-                            dstsOffset++;
+                        // Should have enough room in the destination buffers.
+                        int limit = dstsOffset + dstsLength;
+                        for (int i = dstsOffset;
+                                ((i < limit) && (remains > 0)); i++) {
+
+                            int amount = Math.min(dsts[i].remaining(), remains);
+                            fragment.limit(fragment.position() + amount);
+                            dsts[i].put(fragment);
+                            remains -= amount;
+
+                            if (!dsts[i].hasRemaining()) {
+                                dstsOffset++;
+                            }
+                        }
+
+                        if (remains > 0) {
+                            throw context.fatal(Alert.INTERNAL_ERROR,
+                                "Insufficient room in the destination buffers");
                         }
                     }
-
-                    if (remains > 0) {
-                        throw context.fatal(Alert.INTERNAL_ERROR,
-                            "no sufficient room in the destination buffers");
-                    }
+                } else {
+                    context.registerNoProgressRecord();
                 }
             }
 
