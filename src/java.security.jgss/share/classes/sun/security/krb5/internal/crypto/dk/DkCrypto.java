@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -42,6 +42,7 @@ import sun.security.util.HexDumpEncoder;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.KrbCryptoException;
+import sun.security.util.ByteArrays;
 
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -349,17 +350,8 @@ public abstract class DkCrypto {
                     cksumSize);
             }
 
-            boolean cksumFailed = false;
-            if (calculatedHmac.length >= cksumSize) {
-                for (int i = 0; i < cksumSize; i++) {
-                    if (calculatedHmac[i] != ciphertext[cipherSize+i]) {
-                        cksumFailed = true;
-                        break;
-                    }
-                }
-            }
-
-            if (cksumFailed) {
+            if (!ByteArrays.isEqual(calculatedHmac, 0, calculatedHmac.length,
+                    ciphertext, cipherSize, cipherSize + cksumSize)) {
                 throw new GeneralSecurityException("Checksum failed");
             }
 

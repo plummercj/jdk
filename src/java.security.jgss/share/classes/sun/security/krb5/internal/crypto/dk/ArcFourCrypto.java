@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.*;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
+import sun.security.util.ByteArrays;
 
 /**
  * Support for ArcFour in Kerberos
@@ -383,19 +384,11 @@ public class ArcFourCrypto extends DkCrypto {
             traceOutput("message Hmac", ciphertext, 0,
                                 hashSize);
         }
-        boolean cksumFailed = false;
-        if (calculatedHmac.length >= hashSize) {
-            for (int i = 0; i < hashSize; i++) {
-                if (calculatedHmac[i] != ciphertext[i]) {
-                    cksumFailed = true;
-                    if (debug) {
-                        System.err.println("Checksum failed !");
-                    }
-                    break;
-                }
+        if (!ByteArrays.isEqual(calculatedHmac, 0, calculatedHmac.length,
+                ciphertext, 0, hashSize)) {
+            if (debug) {
+                System.err.println("Checksum failed !");
             }
-        }
-        if (cksumFailed) {
             throw new GeneralSecurityException("Checksum failed");
         }
 

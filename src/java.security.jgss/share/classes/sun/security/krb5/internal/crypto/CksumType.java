@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ package sun.security.krb5.internal.crypto;
 import sun.security.krb5.Checksum;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.internal.*;
+import sun.security.util.ByteArrays;
 
 import static sun.security.krb5.internal.Krb5.DEBUG;
 
@@ -148,17 +149,7 @@ public abstract class CksumType {
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException;
 
     public static boolean isChecksumEqual(byte[] cksum1, byte[] cksum2) {
-        if (cksum1 == cksum2)
-            return true;
-        if ((cksum1 == null && cksum2 != null) ||
-            (cksum1 != null && cksum2 == null))
-            return false;
-        if (cksum1.length != cksum2.length)
-            return false;
-        for (int i = 0; i < cksum1.length; i++)
-            if (cksum1[i] != cksum2[i])
-                return false;
-        return true;
+        return ByteArrays.isEqual(cksum1, cksum2);
     }
 
 }

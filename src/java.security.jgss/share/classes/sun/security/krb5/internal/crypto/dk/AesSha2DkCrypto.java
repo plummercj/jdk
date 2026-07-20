@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,11 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
-import java.util.Arrays;
+import sun.security.util.ByteArrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -467,19 +468,11 @@ public class AesSha2DkCrypto extends DkCrypto {
                                 0, calculatedHmac.length);
                 traceOutput("message Hmac", ciphertext, hmacOffset, hashSize);
             }
-            boolean cksumFailed = false;
-            if (calculatedHmac.length >= hashSize) {
-                for (int i = 0; i < hashSize; i++) {
-                    if (calculatedHmac[i] != ciphertext[hmacOffset+i]) {
-                        cksumFailed = true;
-                        if (debug) {
-                            System.err.println("Checksum failed !");
-                        }
-                        break;
-                    }
+            if (!ByteArrays.isEqual(calculatedHmac, 0, calculatedHmac.length,
+                    ciphertext, hmacOffset, hmacOffset + hashSize)) {
+                if (debug) {
+                    System.err.println("Checksum failed !");
                 }
-            }
-            if (cksumFailed) {
                 throw new GeneralSecurityException("Checksum failed");
             }
 

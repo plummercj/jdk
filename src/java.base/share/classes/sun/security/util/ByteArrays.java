@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@ public class ByteArrays {
     // See the MessageDigest.isEqual(byte[] digesta, byte[] digestb)
     // implementation.  This is a potential enhancement of the
     // MessageDigest class.
+    //
+    // Note: that this method does not perform indices validation.  The current
+    // callers would either have failed earlier using invalid indices before
+    // calling this method or correctly supply From indices of zero.
     public static boolean isEqual(byte[] a, int aFromIndex, int aToIndex,
                                  byte[] b, int bFromIndex, int bToIndex) {
         if (a == b) {
@@ -63,5 +67,16 @@ public class ByteArrays {
         }
 
         return result == 0;
+    }
+
+    public static boolean isEqual(byte[] a, byte[] b) {
+        if (a == b) {
+            return true;
+        }
+
+        if (a == null || b == null) {
+            return false;
+        }
+        return isEqual(a, 0, a.length, b, 0, b.length);
     }
 }
