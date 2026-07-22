@@ -905,7 +905,9 @@ public class KDC {
                         // Requsted not forwardable
                         allowForwardable = false;
                     }
-                    cname = forUserCName;
+                    if (!isReferral) {
+                        cname = forUserCName;
+                    }
                 }
                 if (tkt == null) {
                     throw new KrbException(Krb5.KDC_ERR_PADATA_TYPE_NOSUPP);

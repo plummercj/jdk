@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,50 @@ final class KrbTgsRep extends KrbKdcRep {
         EncTGSRepPart enc_part = new EncTGSRepPart(ref);
         rep.encKDCRepPart = enc_part;
 
-        check(false, req, rep, tgsReq.tgsReqKey);
+        PrincipalName expectedCname = req.reqBody.cname;
+        // System property to control rep.cname check:
+        //
+        // If true, set `expectedCname` for different cases and check that it
+        // is the same as `rep.cname` (inside `check()` method). Later, `creds`
+        // will be bound to this name. Otherwise, simply set `expectedCname`
+        // to `rep.cname` so `check()` always succeeds.
+        //
+        // Default value is `true`. Set to `false` to revert to old behavior.
+        if (!SecurityProperties.getBooleanSystemProp(
+                "sun.security.krb5.tgs-rep.cname.check", true, null)) {
+            expectedCname = rep.cname;
+        } else if (req.reqBody.kdcOptions.get(KDCOptions.CNAME_IN_ADDL_TKT)) {
+            // S4U2proxy
+            expectedCname = tgsReq.getAdditionalCreds().getClient();
+        } else {
+            // S4U2Self
+            if (req.pAData != null) {
+                for (PAData pa : req.pAData) {
+                    // We only support PA_FOR_USER for S4U2Self.
+                    if (pa.getType() == Krb5.PA_FOR_USER) {
+                        String[] snameStrings = rep.encKDCRepPart.sname.getNameStrings();
+                        if (snameStrings.length != 2 ||
+                                !snameStrings[0].equals(PrincipalName.TGS_DEFAULT_SRV_NAME)) {
+                            // This is not a referral
+                            PAForUserEnc p4u = new PAForUserEnc(
+                                    new DerValue(pa.getValue()), null);
+                            // If the KDC supports S4U2self, the expected cname should be
+                            // p4u.name. Otherwise, it should be the name of the service
+                            // sending the request (i.e. req.reqBody.cname). Either is OK
+                            // in this method. Later, the difference will be handled in
+                            // `CredentialsUtil.acquireS4U2selfCreds()`.
+                            // The assignment below makes sure both values will be
+                            // treated as legal in `KrbKdcRep.check()`.
+                            if (p4u.name.equals(rep.cname)) {
+                                expectedCname = p4u.name;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        check(false, req, rep, tgsReq.tgsReqKey, expectedCname);
 
         PrincipalName serverAlias = tgsReq.getServerAlias();
         if (serverAlias != null) {
@@ -95,14 +138,14 @@ final class KrbTgsRep extends KrbKdcRep {
         }
 
         PrincipalName clientAlias = null;
-        if (rep.cname.equals(req.reqBody.cname)) {
+        if (expectedCname.equals(req.reqBody.cname)) {
             // Only propagate the client alias if it is not an
             // impersonation ticket (S4U2Self or S4U2Proxy).
             clientAlias = tgsReq.getClientAlias();
         }
 
         this.creds = new Credentials(rep.ticket,
-                                rep.cname,
+                                expectedCname,
                                 clientAlias,
                                 enc_part.sname,
                                 serverAlias,

@@ -125,10 +125,13 @@ public class ReferralsTest {
 
         kdc1.registerAlias(clientAlias, kdc2);
         kdc1.registerAlias(serviceName, kdc2);
+        kdc1.registerAlias(serviceName + "@" + realmKDC2, kdc2);
         kdc2.registerAlias(clientAlias, clientKDC2Name);
         kdc2.registerAlias(backendServiceName, kdc1);
 
         kdc1.setOption(KDC.Option.ALLOW_S4U2SELF, Arrays.asList(
+                new String[]{serviceName + "@" + realmKDC2}));
+        kdc2.setOption(KDC.Option.ALLOW_S4U2SELF, Arrays.asList(
                 new String[]{serviceName + "@" + realmKDC2}));
         Map<String,List<String>> mapKDC1 = new HashMap<>();
         mapKDC1.put(serviceName + "@" + realmKDC2, Arrays.asList(

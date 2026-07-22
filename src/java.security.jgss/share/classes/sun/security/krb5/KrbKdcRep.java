@@ -42,17 +42,28 @@ abstract class KrbKdcRep {
                       boolean isAsReq,
                       KDCReq req,
                       KDCRep rep,
-                      EncryptionKey replyKey
+                      EncryptionKey replyKey,
+                      PrincipalName expectedCname
                       ) throws KrbApErrException {
 
-        // cname change in AS-REP is allowed only if the client
-        // sent CANONICALIZE or an NT-ENTERPRISE cname in the request, and the
-        // server supports RFC 6806 - Section 11 FAST scheme (ENC-PA-REP flag).
-        if (isAsReq && !req.reqBody.cname.equals(rep.cname) &&
-                ((!req.reqBody.kdcOptions.get(KDCOptions.CANONICALIZE) &&
-                req.reqBody.cname.getNameType() !=
-                PrincipalName.KRB_NT_ENTERPRISE) ||
-                !rep.encKDCRepPart.flags.get(Krb5.TKT_OPTS_ENC_PA_REP))) {
+        boolean cnameModified = false;
+        if (isAsReq) {
+            // cname change in AS-REP is allowed only if the client
+            // sent CANONICALIZE or an NT-ENTERPRISE cname in the request, and the
+            // server supports RFC 6806 - Section 11 FAST scheme (ENC-PA-REP flag).
+            if (!expectedCname.equals(rep.cname)
+                    && ((!req.reqBody.kdcOptions.get(KDCOptions.CANONICALIZE)
+                            && req.reqBody.cname.getNameType() !=
+                                    PrincipalName.KRB_NT_ENTERPRISE)
+                        || !rep.encKDCRepPart.flags.get(Krb5.TKT_OPTS_ENC_PA_REP))) {
+                cnameModified = true;
+            }
+        } else { // TGS-REP
+            if (expectedCname != null && !expectedCname.equals(rep.cname)) {
+                cnameModified = true;
+            }
+        }
+        if (cnameModified) {
             rep.encKDCRepPart.key.destroy();
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }

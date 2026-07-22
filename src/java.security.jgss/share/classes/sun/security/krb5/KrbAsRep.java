@@ -159,7 +159,7 @@ final class KrbAsRep extends KrbKdcRep {
         rep.encKDCRepPart = enc_part;
 
         ASReq req = asReq.getMessage();
-        check(true, req, rep, dkey);
+        check(true, req, rep, dkey, req.reqBody.cname);
 
         PrincipalName clientAlias = cname;
         if (clientAlias.equals(rep.cname))
