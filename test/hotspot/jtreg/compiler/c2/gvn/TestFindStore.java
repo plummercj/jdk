@@ -28,9 +28,10 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8376220
+ * @bug 8376220 8388047
  * @summary Tests that memory accesses can be elided when the compiler can see the value at the
  *          accessed memory location by walking the memory graph.
+ *          Note: TestOptimizeLoadToBeforeArrayCopy.java contains similar code patterns.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver ${test.main.class}
@@ -158,11 +159,20 @@ public class TestFindStore {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD, applyIf = {"ArrayCopyLoadStoreMaxElem", "<100"})
+    @IR(counts = {IRNode.LOAD, "1"}, applyIf = {"ArrayCopyLoadStoreMaxElem", "<100"})
     static int testLoadArrayCopy(int[] a1, int[] a2, int v) {
         a2[2] = v;
         // Should be large so the compiler does not just transform it into a couple of loads and stores
         System.arraycopy(a2, 0, a1, 0, 100);
+        // We used to optimize the load below through the arraycopy, into
+        // a a2[2] load, which then idealized to v. But that's incorrect:
+        // Assume in the wider program context, a2 was shared, and a1
+        // thread local. The value in a1[2] and the return value should
+        // be the same after the method. But if we allow the a1[2] load
+        // to optimize to v, and a2[2] is just mutated by another thread
+        // before the arraycopy, then a2[2] would no longer have the value
+        // v, and a1[2] would accordingly also not have value v.
+        // See also: TestOptimizeLoadToBeforeArrayCopy::test200BothEscape100
         return a1[2];
     }
 

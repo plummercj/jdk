@@ -1114,6 +1114,25 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
       return nullptr;
     }
 
+    // We can only copy from src that provably do not escape the thread.
+    // Otherwise, we defeat defensive copy:
+    //   src (shared)
+    //   dst = arraycopy(src)
+    //   v1 = dst[offset] // about to be "optimized"
+    //   v2 = dst[offset] // not optimized (e.g. behind call)
+    //   assert(v1 == v2, "both load from a thread local array")
+    // With the bad optimization:
+    //   src (shared)
+    //   v1 = src[offset] // "optimized", fresh load from src
+    //   Another thread mutates src[offset]
+    //   dst = arraycopy(src) // A second load of src[offset]
+    //   v2 = dst[offset]
+    //   Now the assert fails.
+    AllocateNode* src_alloc = AllocateNode::Ideal_allocation(src);
+    if (src_alloc == nullptr || !src_alloc->does_not_escape_thread()) {
+      return nullptr;
+    }
+
     // load depends on the tests that validate the arraycopy
     LoadNode* ld = clone_pinned();
     Node* addp = in(MemNode::Address)->clone();

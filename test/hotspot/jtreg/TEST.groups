@@ -153,6 +153,7 @@ tier1_compiler_1 = \
   compiler/c1/ \
   compiler/c2/ \
   -compiler/arraycopy/stress \
+  -compiler/arraycopy/TestOptimizeLoadToBeforeArrayCopy.java \
   -compiler/c2/Test6850611.java \
   -compiler/c2/cr6890943/Test6890943.java \
   -compiler/c2/Test6905845.java \

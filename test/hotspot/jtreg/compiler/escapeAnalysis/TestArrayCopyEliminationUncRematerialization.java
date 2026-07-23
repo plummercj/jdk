@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8370416
+ * @bug 8370416 8388047
  * @key randomness
  * @summary Ensure that rematerialization loads for a scalarized arraycopy destination use the correct control and memory state.
  * @library /test/lib /
@@ -62,9 +62,10 @@ public class TestArrayCopyEliminationUncRematerialization {
     //      int[] dst = new int[COPY_LEN];
     //      System.arraycopy(src, 0, dst, 0, COPY_LEN);
     //      src[WRITE_IDX] = WRITE_VAL_I; // Pollute the element in the source array corresponding to the returned element in dst.
-    //      if (flag) { // Compiles to unstable if trap when called exclusively with flag = false.
-    //          dst[0] = (byte) 0x7f;
+    //      if (flag) { // Compiles to unstable if trap, with flag=true during warmup.
+    //          return SRC_VAL_I; // taken during warmup
     //      }
+    //      // Unstable if-trap for flag=false (possibly with rematerialization loads)
     //      return dst[RETURN_IDX]; // Corresponds to src[WRITE_IDX]
     //  }
     // for all primitive types except boolean and for different methods of polluting the source
@@ -76,6 +77,12 @@ public class TestArrayCopyEliminationUncRematerialization {
     // to read from and store to (see TestConfig below). Further, this generates a variant of the
     // test method, where the offset into src is provided in an argument. C2 cannot put any rematerialization
     // loads in the uncommon path then, but it is useful for checking the correct result.
+    //
+    // We want to observe rematerialization loads for the unstable if trap, so we have to
+    // ensure we get array allocation/arraycopy elimination. A dst load/store in the hot path
+    // would prevent array allocation/arraycopy elimination, so we avoid such dst load/store
+    // in the hot path, and only have dst load in the uncommon path, to test the correctness
+    // of the rematerialization loads.
     public static void main(String[] args) {
         final CompileFramework comp = new CompileFramework();
 
@@ -282,12 +289,14 @@ public class TestArrayCopyEliminationUncRematerialization {
             ));
 
             // Generates tests with the clonebasic variant of the ArraycopyNode.
-            var testCaseClone = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
+            var testCaseClonePlusOne = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
                 let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
                 runTestConst.asToken(testName),
+                let("countPlusOne", loadCount + 1),
                 """
                 @Test
-                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCount}" },
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, ">=#{loadCount}",
+                               IRNode.LOAD_#{typeAbbrev}, "<=#{countPlusOne}" },
                     applyIf = { "TieredCompilation", "true"})
                 """,
                 testMethodClone.asToken(testName, templates)
@@ -321,24 +330,29 @@ public class TestArrayCopyEliminationUncRematerialization {
                 """
             ));
 
+            // Branch taken during warmup flag=true, and else/fall-through becomes unstable if trap.
+            // We want to observe rematerialization loads for the unstable if trap, so we have to
+            // ensure we get array allocation/arraycopy elimination. A dst load/store in the hot path
+            // would prevent array allocation/arraycopy elimination, so we avoid such dst load/store
+            // in the hot path, and only have dst load in the uncommon path, to test the correctness
+            // of the rematerialization loads.
             var unstableTrap = Template.make(() -> scope(
                 let("typeAbbrev", pty.abbrev()),
                 """
                 if (flag) {
-                    src[0] = WRITE_VAL_#{typeAbbrev};
+                    return SRC_VAL_#{typeAbbrev};
                 }
                 """
             ));
 
             // This generates test with a store to the returned src element and a simple unstable if trap.
-            // Only one rematerialization load is in the common path.
             var testStore = Template.make(() -> {
                 final String testName = "Store" + pty.abbrev();
                 return scope(
                     testCaseConst.asToken("Const" + testName, 2 * config.copyLen - 1, new TestTemplates(storeConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, unstableTrap)),
-                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(storeClone, unstableTrap)),
-                    testCaseConst.asToken("Alias" + testName, 3 * config.copyLen - 2, new TestTemplates(storeAlias, unstableTrap))
+                    testCaseClonePlusOne.asToken("Clone" + testName, config.copyLen, new TestTemplates(storeClone, unstableTrap)),
+                    testCaseConst.asToken("Alias" + testName, 2 * config.copyLen - 1, new TestTemplates(storeAlias, unstableTrap))
                 );
             });
 
@@ -378,10 +392,11 @@ public class TestArrayCopyEliminationUncRematerialization {
                 ));
                 return scope(
                     // Sometimes we get one more load depending on the position of the range checks of the different stores.
+                    // Each post-copy store removes one rematerialization load.
                     testCaseConstPlusOne.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap)),
-                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap)),
-                    testCaseConstPlusOne.asToken("Alias" + testName, 3 * config.copyLen - 2 * numStores, new TestTemplates(multiStoresAlias, unstableTrap))
+                    testCaseClonePlusOne.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap)),
+                    testCaseConstPlusOne.asToken("Alias" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresAlias, unstableTrap))
                 );
             });
 
@@ -390,18 +405,22 @@ public class TestArrayCopyEliminationUncRematerialization {
             var testStoreTrapLoop = Template.make(() -> {
                 final String testName = "StoreTrapLoop" + pty.abbrev();
                 var trapTemplate = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
                     """
                     for (int i = 0; i < 1234; i++) {
-                    """,
-                        unstableTrap.asToken(),
-                    """
+                        if (flag) {
+                            src[0] = WRITE_VAL_#{typeAbbrev};
+                        }
+                    }
+                    if (flag) {
+                        return SRC_VAL_#{typeAbbrev};
                     }
                     """
                 ));
                 return scope(
-                    testCaseConst.asToken("Const" + testName, 2 * config.copyLen - 1, new TestTemplates(storeConst, trapTemplate)),
+                    testCaseConst.asToken("Const" + testName, 3 * config.copyLen - 2, new TestTemplates(storeConst, trapTemplate)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, trapTemplate)),
-                    testCaseConst.asToken("Alias" + testName, 2 * config.copyLen - 1, new TestTemplates(storeAlias, trapTemplate))
+                    testCaseConst.asToken("Alias" + testName, 3 * config.copyLen - 2, new TestTemplates(storeAlias, trapTemplate))
                 );
             });
 
@@ -552,12 +571,12 @@ public class TestArrayCopyEliminationUncRematerialization {
                     @Warmup(10000)
                     static void run#testName(RunInfo info) {
                         Arrays.fill(#src, SRC_VAL_#{typeAbbrev});
-                        #type res = test#testName(#src);
+                        #type res = test#testName(#src, info.isWarmUp());
                         Asserts.assertEQ((#type) SRC_VAL_#{typeAbbrev}, res, "Wrong Result from " + info.getTest().getName());
                     }
 
                     @Test
-                    static #type test#testName(#type[] src) {
+                    static #type test#testName(#type[] src, boolean flag) {
                         #type[] dst = new #type[COPY_LEN];
                         System.arraycopy(src, COPY_IDX, dst, 0, COPY_LEN);
 
@@ -570,6 +589,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                             }
                         }
 
+                        if (flag) {
+                            return SRC_VAL_#{typeAbbrev};
+                        }
                         return dst[1];
                     }
                     """
