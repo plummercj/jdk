@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,11 @@ import java.io.ObjectStreamException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.lang.ref.SoftReference;
+import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RecursiveTask;
@@ -1296,11 +1301,152 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static final BigInteger[] negConst = new BigInteger[MAX_CONSTANT+1];
 
     /**
-     * The cache of powers of each radix.  This allows us to not have to
-     * recalculate powers of radix^(2^n) more than once.  This speeds
-     * Schoenhage recursive base conversion significantly.
+     * Hard or soft reference to a BigInteger.
      */
-    private static volatile BigInteger[][] powerCache;
+    private static class RefBigInt extends SoftReference<BigInteger> {
+        RefBigInt(BigInteger referent) {
+            super(referent);
+        }
+    }
+
+    private static class SoftRefBigInt extends RefBigInt {
+        SoftRefBigInt(BigInteger referent) {
+            super(referent);
+        }
+
+        @Override
+        public String toString() {
+            // Handle possibly null referent
+            return Objects.toString(get());
+        }
+    }
+
+    // Indirectly subclass SoftReference as an implementation technique to
+    // allow abstracting over hard and soft references.
+    private static class HardRefBigInt extends RefBigInt {
+        private BigInteger keepAlive;
+
+        HardRefBigInt(BigInteger referent) {
+            super(referent);
+            keepAlive = referent;
+        }
+
+        @Override
+        public BigInteger get() {
+            assert keepAlive != null;
+            return keepAlive;
+        }
+
+        @Override
+        public String toString() {
+            return keepAlive.toString();
+        }
+    }
+
+    /**
+     * Per-radix caches of squared powers of the radix.
+     *
+     * These values are used as reference points in the Schoenhage
+     * recursive base conversion algorithm. Using caching/memoization
+     * of these values speeds up the algorithm. To avoid holding
+     * memory for unnecessarily long, large BigInteger values are held
+     * using soft references so the objects can be garbage collected
+     * as needed. If a value is garbage collected and needed later, it
+     * is recomputed and added back into the cache.
+     *
+     * For notational convenience, the BigInteger values in this
+     * comment are written as sequences of digits without use of
+     * constructors or factories.
+     *
+     * Each successive reference point in the algorithm is the square
+     * of the preceding value. For example, for radix 10 the reference
+     * points are:
+     *
+     * 0 => 10^(2^0) = 10^1 = 10     // Base case of the radix
+     * 1 => 10^(2^1) = 10^2 = 100
+     * 2 => 10^(2^2) = 10^4 = 10_000
+     *
+     * Conceptually, for a given radix, this mapping could be
+     * implemented as a 1D array of BigInteger's since the function is
+     * a mapping from a non-negative integer value to a BigInteger:
+     *
+     *  // Radix 10 mapping from exponent to BigInteger
+     *  {10, 100, 10_000, 100_000_000, ...}
+     *
+     * The collection of supported radices could then be implemented
+     * as outer dimension of a 2D array:
+     *
+     *  // Conceptual mapping as 2D array
+     *  {
+     *   {},                                  // Radix 0, unused
+     *   {},                                  // Radix 1, unused
+     *   {2,  4,   16,     256,   ...},       // MIN_RADIX of 2
+     *   {3,  9,   81,     6_561, ...},
+     *   ...
+     *   {10, 100, 10_000, 100_000_000, ...}, // Radix 10
+     *   ...
+     *   {36, ...}                            // MAX_RADIX of 36
+     *   };
+     *
+     * Generic types, including soft references, work better with
+     * collections than arrays. Therefore, the containing data
+     * structures used here are collection-based. For a given radix,
+     * fast concurrent access is desired. One platform class
+     * supporting that access mode is concurrent hash map. This is no
+     * analogous "concurrent list" type available. Therefore, the
+     * per-radix mapping is implemented using a concurrent hash map
+     * from Integer to soft references of BigInteger, using array-like
+     * notation:
+     *
+     *  // Radix 10 mapping as a map from Integer exponents to BigInteger
+     *  {(0, 10), (1, 100), (2, 10_000), (3, 100_000_000), ...},
+     *
+     * Finally, the outer data structure is a list of these concurrent
+     * hash maps:
+     *
+     *  // Conceptual mapping as list of maps
+     *  {{(0, 2), (1, 4),   (2, 16),     (3, 256), ...},         // MIN_RADIX of 2
+     *  {(0, 3),  (1, 9),   (2, 81),     (3, 6_561), ...},
+     *  ...
+     *  {(0, 10), (1, 100), (2, 10_000), (3, 100_000_000), ...}, // Radix 10
+     *  ...
+     *  {(0, 36), ...}};                                         // MAX_RADIX of 36
+     *
+     * (The radix is offset by MIN_RADIX on look-up to avoid needing
+     * to store empty maps for the unsupported radices of 0 and 1.)
+     *
+     * The outer structure would be a good candidate for a "lazy list"
+     * where the list entry for a given radix was only populated a
+     * single time if needed.
+     *
+     * (Note: for supported radices that have a square-root / square
+     * relationship {(2, 4), (3, 9), (4, 16), (5, 25) (6, 36)}, it
+     * would be possible for the squared powers to be shared since the
+     * sequence for the larger base is a suffix of the sequence for
+     * the smaller base. For example, the sequence for base 2 is {2,
+     * 4, 16, 256, ..} and the sequence for base 4 is {4, 16, 256,
+     * ...}. No attempt is made in this implementation to manage that
+     * kind of sharing; the values for each radix are managed
+     * independently.)
+     *
+     * While the list itself an unmodifiable list, the list elements
+     * for each radix are themselves mutable as the BigIntegers can be
+     * evicted by memory pressure.
+     *
+     * The map implementations are ConcurrentHashMap's. These support
+     * multi-threaded access. Any multi-threaded writes to the
+     * per-radix maps for a given exponent are benign races since the
+     * value of the BigInteger is a deterministic function of the
+     * integer exponent. In other words, it doesn't matter for
+     * correctness if one .equals() BigInteger replaces another one
+     * for a particular exponent.
+     *
+     * The references of BigInteger are either soft or hard
+     * references, depending on which of SoftRefBigInt and
+     * HardRefBigInt is used. Hard refs are used to initialize the
+     * mapping for 0 in each radix.
+     */
+    private static final List<Map<Integer, RefBigInt>> powerCache;
 
     /** The cache of logarithms of radices for base conversion. */
     @Stable
@@ -1325,19 +1471,25 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             negConst[i] = new BigInteger(magnitude, -1);
         }
 
-        /*
-         * Initialize the cache of radix^(2^x) values used for base conversion
-         * with just the very first value.  Additional values will be created
-         * on demand.
-         */
-        BigInteger[][] cache = new BigInteger[Character.MAX_RADIX+1][];
         logCache = new double[Character.MAX_RADIX+1];
 
-        for (int i=Character.MIN_RADIX; i <= Character.MAX_RADIX; i++) {
-            cache[i] = new BigInteger[] { BigInteger.valueOf(i) };
+        List< Map<Integer, RefBigInt>> tmpCollectionCaches =
+            new ArrayList<>((Character.MAX_RADIX - Character.MIN_RADIX) + 1);
+
+        for (int i = Character.MIN_RADIX; i <= Character.MAX_RADIX; i++) {
             logCache[i] = Math.log(i);
+
+            // static initializer runs single-threaded; don't need to
+            // synchronize on the tmpCollectionCaches list.
+            Map<Integer, RefBigInt> chm = new ConcurrentHashMap<>();
+            // Use hard references for base-case radix values
+            chm.put(Integer.valueOf(0), new HardRefBigInt(BigInteger.valueOf(i)));
+
+            // Avoid the need for empty elements for 0 through
+            // (Character.MIN_RADIX - 1) by offsetting the indexing
+            tmpCollectionCaches.add((i - Character.MIN_RADIX), chm);
         }
-        BigInteger.powerCache = cache;
+        powerCache = List.copyOf(tmpCollectionCaches);
     }
 
     /**
@@ -4308,14 +4460,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return;
         }
 
-        // Calculate a value for n in the equation radix^(2^n) = u
-        // and subtract 1 from that value.  This is used to find the
-        // cache index that contains the best value to divide u.
+        // Calculate a value for exponent n in the equation radix^(2^n) = u
+        // and subtract 1 from that value.  This is used to retrieve the
+        // cached value that contains the best divisor to divide u.
         int b = u.bitLength();
         int n = (int) Math.round(Math.log(b * LOG_TWO / logCache[radix]) /
                                  LOG_TWO - 1.0);
 
-        BigInteger v = getRadixConversionCache(radix, n);
+        BigInteger v = getDivisor(radix, n);
         BigInteger[] results;
         results = u.divideAndRemainder(v);
 
@@ -4327,31 +4479,63 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Returns the value radix^(2^exponent) from the cache.
+     * Returns the value radix^(2^exponent) from the cache to use as a
+     * divisor For example, for radix 10:
+     * 0 => 10^(2^0) = 10^1 = 10
+     * 1 => 10^(2^1) = 10^2 = 100
+     * 2 => 10^(2^2) = 10^4 = 10_000
+     * ...
+     *
      * If this value doesn't already exist in the cache, it is added.
-     * <p>
-     * This could be changed to a more complicated caching method using
-     * {@code Future}.
      */
-    private static BigInteger getRadixConversionCache(int radix, int exponent) {
-        BigInteger[] cacheLine = powerCache[radix]; // volatile read
-        if (exponent < cacheLine.length) {
-            return cacheLine[exponent];
-        }
+    private static BigInteger getDivisor(final int radix, final int exponent) {
+        // The need for empty elements for 0 through
+        // (Character.MIN_RADIX - 1) is avoiding by offsetting the
+        // indexing by Character.MIN_RADIX
+        Map<Integer, RefBigInt> radixCache =
+            powerCache.get(radix - Character.MIN_RADIX);
 
-        int oldLength = cacheLine.length;
-        cacheLine = Arrays.copyOf(cacheLine, exponent + 1);
-        for (int i = oldLength; i <= exponent; i++) {
-            cacheLine[i] = cacheLine[i - 1].pow(2);
-        }
+        BigInteger radixToExponent = getCachedExponent(radixCache, exponent);
+        if (radixToExponent == null) {
+            assert exponent >= 1;
 
-        BigInteger[][] pc = powerCache; // volatile read again
-        if (exponent >= pc[radix].length) {
-            pc = pc.clone();
-            pc[radix] = cacheLine;
-            powerCache = pc; // volatile write, publish
+            // Use a simple loop to compute any needed values and put
+            // any missing values in the cache.
+            BigInteger cursor = getCachedExponent(radixCache, 0); // Must be non-null
+
+            for (int i = 1; i <= exponent; i++) {
+                assert cursor != null;
+                BigInteger tmp = getCachedExponent(radixCache, i);
+                if (tmp == null) {
+                    tmp = cursor.pow(2);
+                    radixCache.put(i, createRef(tmp));
+                }
+                cursor = tmp;
+            }
+            radixToExponent = cursor;
         }
-        return cacheLine[exponent];
+        assert Objects.nonNull(radixToExponent);
+        return radixToExponent;
+    }
+
+    private static BigInteger getCachedExponent(Map<Integer, RefBigInt> radixCache,
+                                                int exponent) {
+        assert exponent >= 0;
+        BigInteger result = null;
+        RefBigInt refBi = radixCache.get(exponent);
+        if (refBi != null) {
+            result = refBi.get();
+        }
+        assert (exponent == 0) ? (result != null) : true;
+        return result;
+    }
+
+    private static RefBigInt createRef(BigInteger bigInt) {
+        // Note: policy could be adjusted to tune memory usage and
+        // performance.
+        return (bigInt.mag.length <= 1) ?
+            new HardRefBigInt(bigInt):
+            new SoftRefBigInt(bigInt);
     }
 
     /* Size of ZEROS string. */
