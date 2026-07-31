@@ -1813,17 +1813,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         return (RMIServer) objref;
     }
 
-    private static final String DEFAULT_URL_FILTER_PATTERN = "javax.management.remote.rmi.*;" +
-        "java.rmi.server.*;" +
-        "sun.rmi.server.*;" +
-        "sun.rmi.transport.LiveRef;" +
-        "java.lang.String;" +
+    private static final String DEFAULT_URL_FILTER_PATTERN =
         "java.lang.Number;" +
-        "sun.rmi.transport.tcp.TCPEndpoint;" +
-        "javax.rmi.ssl.*;" +
-        "java.lang.reflect.Proxy;" +
-        "jdk.proxy.*;" +
-        "jdk.proxy2.*;";
+        "java.lang.String;" +
+        "java.rmi.server.RemoteObject;" +
+        "java.rmi.server.RemoteStub;" +
+        "javax.management.remote.rmi.*;" +
+        "javax.rmi.ssl.*;";
 
     private static final String DEFAULT_URL_FILTER_PATTERN_TAIL = "!*";
 
